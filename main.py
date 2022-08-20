@@ -512,14 +512,29 @@ async def on_message(message):
                     if message_date < utc.localize(startw0) and message_date > utc.localize(endw1):
                     #if utc.localize(message_date) < utc.localize(startw0) and utc.localize(message_date) > utc.localize(endw1):
                         message_date = message_date.strftime("%Y/%m/%d %H:%M:%S %Z%z")
+    
                         embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
                         if a.name == "Deleted User":
                             a = "Deleted User"
                             embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
-                            await message.channel.send(embed=embed)
+                            if message_attachments == []:
+                                await message.channel.send(embed=embed)
+                            elif message_attachments != []:
+                                a = 0
+                                for image in message_attachments:
+                                    if a >= 1: break
+                                    if image.content_type == "image/png" or "image/jpg" or "image/jpeg":
+                                        image_url = image.url
+                                        embed.set_thumbnail(url=image_url)
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                                    else:
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                            count += 1
                         else:
                             user = await client.fetch_user(int(a.id))
-                            pfp = user.avatar
+                            pfp = user.avatar_url
                             embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
                             if message_attachments == []:
                                 await message.channel.send(embed=embed)
@@ -542,10 +557,24 @@ async def on_message(message):
                         if a.name == "Deleted User":
                             a = "Deleted User"
                             embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
-                            await message.channel.send(embed=embed)
+                            if message_attachments == []:
+                                await message.channel.send(embed=embed)
+                            elif message_attachments != []:
+                                a = 0
+                                for image in message_attachments:
+                                    if a >= 1: break
+                                    if image.content_type == "image/png" or "image/jpg" or "image/jpeg":
+                                        image_url = image.url
+                                        embed.set_thumbnail(url=image_url)
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                                    else:
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                            count += 1
                         else:
                             user = await client.fetch_user(int(a.id))
-                            pfp = user.avatar
+                            pfp = user.avatar_url
                             embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
                             if message_attachments == []:
                                 await message.channel.send(embed=embed)
