@@ -3,21 +3,8 @@
 # 2. Change the roles in @commands.has_any_role("Moderator", "Administrator", "世界そのもののボット") to fit your server
 # 3. Confirm that the user id in the on_message function is the one from the bot
 # 4. If you dont want to search for bookmarked messages change the 🔖 emoji
-# 5. Change the contents of the channel description in line 629
+# 5. Change the contents of the channel description in line 608
 
-from cgitb import text
-from fileinput import filename
-from http.client import responses
-from imaplib import Commands
-from itertools import count
-from logging.handlers import WatchedFileHandler
-from multiprocessing.sharedctypes import Value
-from posixpath import split
-from pydoc import describe
-from random import choices
-from re import X
-from secrets import choice
-from tracemalloc import start
 import discord
 import os
 import pytz
@@ -25,22 +12,12 @@ import regex as re
 import asyncio
 import datetime
 import time
-from numpy import sort
-from discord.ext.commands import Bot, MessageConverter
 from discord.ext import commands
 from datetime import date, tzinfo
 from datetime import datetime
 from datetime import timedelta
 import datetime
-from discord.ext.commands import CommandNotFound
-from pytz import HOUR
-from regex import D
-import random
-import collections
-import pandas as pd
 import sqlite3
-from pathlib import Path
-import json
 
 start_time = time.time()
 intents = discord.Intents.all()
