@@ -426,7 +426,7 @@ async def on_message(message):
     if message.author.id == 997928130327085096:
         if message.content.startswith(f't.find'):
                 await message.delete()
-                preparing_msg = await channel.send("Preparing new list...")
+                preparing_msg = await message.channel.send("Preparing new list...")
                 start_time = time.time()
                 num = 0
                 msgSplit = message.content.split(" ")
