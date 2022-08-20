@@ -1,4 +1,12 @@
+#To setup this bot on your server for testing purposes following these steps
+# 1. Download the libraries from requirements.txt
+# 2. Change the roles in @commands.has_any_role("Moderator", "Administrator", "世界そのもののボット") to fit your server
+# 3. Confirm that the user id in the on_message function is the one from the bot
+# 4. If you dont want to search for bookmarked messages change the 🔖 emoji
+# 5. Change the contents of the channel description in line 629
+
 from cgitb import text
+from fileinput import filename
 from http.client import responses
 from imaplib import Commands
 from itertools import count
@@ -12,6 +20,7 @@ from secrets import choice
 from tracemalloc import start
 import discord
 import os
+import pytz
 import regex as re
 import asyncio
 import datetime
@@ -19,7 +28,7 @@ import time
 from numpy import sort
 from discord.ext.commands import Bot, MessageConverter
 from discord.ext import commands
-from datetime import date
+from datetime import date, tzinfo
 from datetime import datetime
 from datetime import timedelta
 import datetime
@@ -31,7 +40,7 @@ import collections
 import pandas as pd
 import sqlite3
 from pathlib import Path
-
+import json
 
 start_time = time.time()
 intents = discord.Intents.all()
@@ -56,10 +65,11 @@ delete_Limit = None
 next_start_time = None
 split_message2 = None
 deltime = None
-
+look_back_days = None
+info_desc = None
+embed_allowed = "Yes"
 
 @client.group()
-@commands.has_any_role("Moderator", "Administrator", "世界そのもののボット")
 async def help(ctx):
     if ctx.invoked_subcommand is None:
         await ctx.send("```" + "\n" +
@@ -87,10 +97,18 @@ async def find(ctx):
                    "Example: Posting $find 🔖 5 2500 will find all messages that have 5 and more reactions of 🔖 in the last 2500 messages and give them out." +
                    "```")
 
+@client.command()
+@commands.has_any_role("Moderator", "Administrator", "世界そのもののボット")
+async def allowing_embeds(ctx, arg):
+    global embed_allowed
+    embed_allowed = arg
+    delete_msg = await ctx.send(f"Information embed: {arg}")
+    await asyncio.sleep(2)
+    await delete_msg.delete()
 
 @client.command()
 @commands.has_any_role("Moderator", "Administrator", "世界そのもののボット")
-async def quick_setup(ctx, reaction_amount, range_limit, list_channel, search_channel, hours, minutes, delete):
+async def quick_setup(ctx, reaction_amount, range_limit, list_channel, search_channel, hours, minutes, delete, new_message_hl):
 
     global target_amount
     global target_range
@@ -99,6 +117,7 @@ async def quick_setup(ctx, reaction_amount, range_limit, list_channel, search_ch
     global post_hour
     global post_minute
     global deltime
+    global look_back_days
 
     target_amount = reaction_amount
     target_range = range_limit
@@ -107,6 +126,8 @@ async def quick_setup(ctx, reaction_amount, range_limit, list_channel, search_ch
     post_hour = int(hours)
     post_minute = int(minutes)
     deltime = int(delete)
+    look_back_days = int(new_message_hl)
+
 
     output_channel_name = client.get_channel(int(output_channel))
     fetch_channel_name = client.get_channel(int(fetch_channel))
@@ -119,7 +140,8 @@ async def quick_setup(ctx, reaction_amount, range_limit, list_channel, search_ch
                                "Output channel:      #" + str(output_channel_name) + "\n" +
                                "Fetch channel:       #" + str(fetch_channel_name) + "\n" +
                                "Posting time:        " + str(hours) + ":" + str(minutes) + "\n" +
-                               "Time interval:       " + str(deltime) + "hours" + "\n" + "```" + "\n" +
+                               "Time interval:       " + str(deltime) + "hours" + "\n" + 
+                               "Marking new msgs:    " + str(new_message_hl) + " days old" +"```" + "\n" +
                                "Yes/no")
 
     infotime = datetime.datetime.today()
@@ -129,8 +151,8 @@ async def quick_setup(ctx, reaction_amount, range_limit, list_channel, search_ch
                                   "Messages to check:   " + str(target_range) + "\n" +
                                   "Output channel:      #" + str(output_channel_name) + "\n" +
                                   "Fetch channel:       #" + str(fetch_channel_name) + "\n" +
-                                  "Posting time:        " + str(hours) + ":" + str(minutes) + "\n" +
-                                  "Time interval:       " + str(deltime) + "hours" + "\n" + "```")
+                                  "Posting time:        " + str(hours) + ":" + str(minutes) + "\n" + 
+                                  "Marking new msgs:    " + str(new_message_hl) + " days old" + "```")
 
     def user_check(m):
         return m.author == ctx.author and m.channel == channel
@@ -139,22 +161,28 @@ async def quick_setup(ctx, reaction_amount, range_limit, list_channel, search_ch
     allowed = ["Yes", "y", "yes", "YES", "Y"]
     if msg.content in allowed:
         msg_2 = await channel.send("Settings have been saved. Starting fetch in 3...")
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
         await msg_2.delete()
+        await asyncio.sleep(1)
         await msg.delete()
+        await asyncio.sleep(1)
         await msg_1.delete()
+        await asyncio.sleep(1)
         await ctx.message.delete()
 
         await asyncio.sleep(1)
         await find_post_time()
     else:
         msg_3 = await channel.send("Cancelled quick setup.")
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
         await msg_3.delete()
+        await asyncio.sleep(1)
         await msg.delete()
+        await asyncio.sleep(1)
         await msg_1.delete()
+        await asyncio.sleep(1)
 
         await ctx.message.delete()
 
@@ -295,6 +323,14 @@ async def deltime(ctx):
                    "Changes the intval between the fetches." +
                    "```")
 
+@client.command()
+@commands.has_any_role("Moderator", "Administrator", "世界そのもののボット")
+async def description(ctx, arg):
+    global info_desc
+    info_desc = arg
+    delete_msg = await ctx.send(f'Info embed description: {info_desc}')
+    await asyncio.sleep(2)
+    await delete_msg.delete()
 
 @client.command()
 @commands.has_any_role("Moderator", "Administrator", "世界そのもののボット")
@@ -360,8 +396,7 @@ async def find_post_time():
     global time_to_run
     now = datetime.datetime.today()
     start_date_formatted = now
-    time_to_run = start_date_formatted.replace(
-        hour=post_hour, minute=post_minute)
+    time_to_run = start_date_formatted.replace(hour=post_hour, minute=post_minute)
     print(f"This is time to run {time_to_run}")
 
     wait_time = (time_to_run - start_date_formatted).total_seconds()
@@ -387,168 +422,234 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    #Allowing only the bot to start the list output
+    # Allowing only the bot to start the list output
     if message.author.id == 997928130327085096:
         if message.content.startswith(f't.find'):
-            await message.delete()
-            start_time = time.time()
-            num = 0
-            msgSplit = message.content.split(" ")
-            historyLimit = int(msgSplit[3]) if len(msgSplit) == 4 else 10
-            list = []
+                await message.delete()
+                start_time = time.time()
+                num = 0
+                msgSplit = message.content.split(" ")
+                historyLimit = int(msgSplit[3]) if len(msgSplit) == 4 else 10
+                list = []
 
-            def bubblesort(list, lower_first=True):
-                for i in range(len(list)):
-                    for j in range(len(list) - 1):
-                        if lower_first:
-                            sort_condition = list[j] > list[j + 1]
+                # con = sqlite3.connect('bookmark-list.db')
+                # cur = con.cursor()
+                # today_date = datetime.datetime.today()
+                # today_date_string = "'" + \
+                #     today_date.strftime("%Y/%m/%d %H:%M:%S") + "'"
+                # table_query = '''CREATE TABLE {}(reaction_amount int, author text, content text, link text, message_date text, filenames text, image_link text)'''.format(
+                #     today_date_string)
+                # cur.execute(table_query)
+                # con.commit()
+                # con.close()
+
+                # Fetching messages and looking for bookmark reactions
+                channel = client.get_channel(int(fetch_channel))
+                async for historical_message in channel.history(limit=historyLimit):
+                    for reaction in historical_message.reactions:
+                        if reaction.emoji == msgSplit[1]:
+                            num = reaction.count
+                            if num >= int(msgSplit[2]):
+
+                                # Remove user pings
+                                maxChar = 275
+                                split_message = historical_message.content.split()
+                                user_id_list = []
+                                for e in split_message:
+                                    if e.startswith("<@"):
+                                        user_id_raw = re.findall("\<\@(.*?)\>", e)
+                                        user_id = str(user_id_raw).strip("['']")
+                                        user_id_new = re.sub('\D', '', user_id)
+                                        user_id_list.append(user_id_new)
+
+                                user_name_list = []
+                                for r in user_id_list:
+                                    user_name = await client.fetch_user(r)
+                                    user_name_list.append(str(user_name))
+
+                                for i in range(len(split_message)):
+                                    if split_message[i].startswith("<@"):
+                                        split_message[i] = user_name_list[0]
+                                        del user_name_list[0]
+
+                                # Remove links/embeds
+                                # embed_list = []
+                                # for p in split_message:
+                                #     if p.startswith("https:"):
+                                #         link_raw = re.sub(
+                                #             "(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\/\w-]*)*\/?\??([^#\n\r]*)?#?([^\n\r]*)", '', p)
+                                #         #link_raw = re.sub("^https?:\/\/(.*)", '', p)
+                                #         # embed_link_edited = str(link_raw).strip("['']")
+                                #         # embed_link = "<" + embed_link_edited + ">"
+                                #         embed_list.append(str(link_raw))
+
+                                # for o in range(len(split_message)):
+                                #     if split_message[o].startswith("https:"):
+                                #         split_message[o] = embed_list[0]
+                                #         del embed_list[0]
+
+                                historical_message.content = " ".join(str(g) for g in split_message)
+                                # if historical_message.author == "Deleted User#0000":
+                                #     print(historical_message.author, type(historical_message.author))
+                                #     historical_message.author = "Deleted User"
+                                # The [{}] regex
+                                
+                                if "[{" in historical_message.content and "}]" in historical_message.content:
+                                    description = re.findall('\[\{(.*?)\}\]', historical_message.content)[0]
+                                    text = str(description).strip("['']")
+                                    list.append((num, historical_message.author, + "\n" + text, historical_message.jump_url, historical_message.created_at, historical_message.attachments))
+                                elif len(historical_message.content) > maxChar:
+                                    list.append((num, historical_message.author, "\n" + historical_message.content[:maxChar] + "\n", historical_message.jump_url, historical_message.created_at, historical_message.attachments))
+                                elif len(historical_message.content) == 0 and historical_message.attachments:
+                                    for naming in historical_message.attachments:
+                                        historical_message.content = naming.filename     
+                                    list.append((num, historical_message.author, "\n" + historical_message.content, historical_message.jump_url, historical_message.created_at, historical_message.attachments))
+                                else:
+                                    list.append((num, historical_message.author, "\n" + historical_message.content, historical_message.jump_url, historical_message.created_at, historical_message.attachments))
+                                
+                                # con = sqlite3.connect('bookmark-list.db')
+                                # cur = con.cursor()
+                                # insert_query = f"INSERT INTO {today_date_string} (reaction_amount, author, content, link, message_date, filenames, image_link) VALUES (?,?,?,?,?)"
+                                # value_query = (int(num), str(historical_message.author), str(historical_message.content), str(historical_message.jump_url), str(historical_message.created_at), str(itsfilename), str(itsimageurl))
+                                # cur.execute(insert_query, value_query)
+                                # con.commit()
+                                # con.close()
+
+                def sort_tup_first_ele(list):
+                    return(sorted(list, key=lambda g: g[0], reverse=True))
+
+                sortedList = sort_tup_first_ele(list)
+                delete_Limit = len(sortedList)+5
+                list_items = len(sortedList)
+                channel = client.get_channel(int(message.channel.id))
+                count = 1
+                utc=pytz.UTC
+                global look_back_days
+                startw0 = datetime.datetime.today()
+                endw1 = startw0 - timedelta(look_back_days)
+
+                # List output
+                for (reaction_count, a, message_content, message_link, message_date, message_attachments) in sortedList:
+                    if message_date < utc.localize(startw0) and message_date > utc.localize(endw1):
+                    #if utc.localize(message_date) < utc.localize(startw0) and utc.localize(message_date) > utc.localize(endw1):
+                        message_date = message_date.strftime("%Y/%m/%d %H:%M:%S %Z%z")
+                        embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
+                        if a.name == "Deleted User":
+                            a = "Deleted User"
+                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                            await message.channel.send(embed=embed)
                         else:
-                            sort_condition = list[j] < list[j + 1]
-                        if sort_condition:
-                            list[j], list[j + 1] = list[j + 1], list[j]
+                            user = await client.fetch_user(int(a.id))
+                            pfp = user.avatar
+                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                            if message_attachments == []:
+                                await message.channel.send(embed=embed)
+                            elif message_attachments != []:
+                                a = 0
+                                for image in message_attachments:
+                                    if a >= 1: break
+                                    if image.content_type == "image/png" or "image/jpg" or "image/jpeg":
+                                        image_url = image.url
+                                        embed.set_thumbnail(url=image_url)
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                                    else:
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                            count += 1
+                    else:
+                        message_date = message_date.strftime("%Y/%m/%d %H:%M:%S %Z%z")
+                        embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}',description=f'{message_content} \n [Link]({message_link})')
+                        if a.name == "Deleted User":
+                            a = "Deleted User"
+                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                            await message.channel.send(embed=embed)
+                        else:
+                            user = await client.fetch_user(int(a.id))
+                            pfp = user.avatar
+                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                            if message_attachments == []:
+                                await message.channel.send(embed=embed)
+                            elif message_attachments != []:
+                                a = 0
+                                for image in message_attachments:
+                                    if a >= 1: break
+                                    if image.content_type == "image/png" or "image/jpg" or "image/jpeg":
+                                        image_url = image.url
+                                        embed.set_thumbnail(url=image_url)
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                                    else:
+                                        await message.channel.send(embed=embed)
+                                        a += 1
+                            count += 1
 
-            con = sqlite3.connect('bookmark-list.db')
-            cur = con.cursor()
-            today_date = datetime.datetime.today()
-            today_date_string = "'" + today_date.strftime("%Y/%m/%d %H:%M:%S") + "'"
-            table_query = '''CREATE TABLE {}(reaction_amount int, author text, content text, link text)'''.format(today_date_string)
-            cur.execute(table_query)
-            con.commit()
-            con.close()
+                channel = client.get_channel(int(message.channel.id))
+                # Link to highest bookmarked message
+                async for first_message in channel.history(oldest_first=True, limit=1):
+                    first_list_link = first_message.jump_url
 
-            #Fetching messages and looking for bookmark reactions
-            channel = client.get_channel(int(fetch_channel))
-            async for historical_message in channel.history(limit=historyLimit):
-                for reaction in historical_message.reactions:
-                    if reaction.emoji == msgSplit[1]:
-                        num = reaction.count
-                        if num >= int(msgSplit[2]):
-                            
-                            #Remove user pings
-                            maxChar = 275
-                            split_message = historical_message.content.split()
-                            user_id_list = []
-                            for e in split_message:
-                                if e.startswith("<@"):
-                                    user_id_raw = re.findall("\<\@(.*?)\>", e)
-                                    user_id = str(user_id_raw).strip("['']")
-                                    user_id_new = re.sub('\D', '', user_id)
-                                    user_id_list.append(user_id_new)
+                fetch_channel_link = "<#" + fetch_channel + ">"
+                today = datetime.datetime.today()
+                global deltime
+                # Change timedelta to change the wait time for the next list
+                now = datetime.datetime.today()
+                then = datetime.datetime.today() + timedelta(hours=deltime)
+                wait_time = (then - now).total_seconds()
 
-                            user_name_list = []
-                            for r in user_id_list:
-                                user_name = await client.fetch_user(r)
-                                user_name_list.append(str(user_name))
+                waittime = datetime.datetime.today()
+                waittime_string = waittime.strftime("%Y/%m/%d %H:%M:%S")
 
-                            for i in range(len(split_message)):
-                                if split_message[i].startswith("<@"):
-                                    split_message[i] = user_name_list[0]
-                                    del user_name_list[0]
+                global embed_allowed
+                if embed_allowed == "Yes":
+                    global info_desc
+                    if info_desc == None:
+                        embed = discord.Embed(title=f'Jump to the highest bookmarked message', color=discord.Color.from_rgb(255, 255, 255), url=first_list_link)
+                        embed.add_field(name=f'Changelog', value=f'- Red coloring on embed indicates that the message is not older than a week \n - Attachment filename and image is now displayed \n - Post date of message was added')
+                        user = message.author
+                        pfp = user.avatar
+                        embed.set_footer(icon_url=(pfp), text=f'From {message.author}  |  List from {waittime_string}')
+                        await message.channel.send(embed=embed)
+                    else:
+                        embed = discord.Embed(title=f'Jump to the highest bookmarked message', color=discord.Color.from_rgb(255, 255, 255), url=first_list_link)
+                        embed.add_field(name=f'Changelog', value=f'{info_desc}')
+                        user = message.author
+                        pfp = user.avatar
+                        embed.set_footer(icon_url=(pfp), text=f'From {message.author}  |  List from {waittime_string}')
+                        await message.channel.send(embed=embed)
 
-                            #Remove links/embeds
-                            embed_list = []
-                            for p in split_message:
-                                if p.startswith("https:"):
-                                    link_raw = re.sub("(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\/\w-]*)*\/?\??([^#\n\r]*)?#?([^\n\r]*)", '', p)
-                                    #link_raw = re.sub("^https?:\/\/(.*)", '', p)
-                                    # embed_link_edited = str(link_raw).strip("['']")
-                                    # embed_link = "<" + embed_link_edited + ">"
-                                    embed_list.append(str(link_raw))
+                # consol output for me
+                print(str(waittime_string) + ": Waiting for list deletion " +
+                    str(wait_time) + " seconds")
+                print("Output time:" + " %s seconds " %
+                    round((time.time() - start_time), 2))
 
-                            for o in range(len(split_message)):
-                                if split_message[o].startswith("https:"):
-                                    split_message[o] = embed_list[0]
-                                    del embed_list[0]
+                #db_thread = "<#" + str(1008685718131986493) + ">"
 
-                            historical_message.content = " ".join(
-                                str(g) for g in split_message)
+                await channel.edit(topic="Jump to the highest bookmarked message " + first_list_link + "\n" +
+                                "\n" +
+                                "**About**" + "\n" +
+                                "List from " + str(waittime_string) + " (UTC)" + "\n" +
+                                "Next refresh in " + str(deltime) + "hours" + "\n" +
+                                "Scraped from " + fetch_channel_link + "\n" +
+                                "Output time:" + " %s seconds " % round((time.time() - start_time), 2) + "\n" +
+                                "List length: " + str(list_items) + "\n" +
+                                "For more info see https://timm-1.gitbook.io/bookmarklistbot/" + "\n" +
+                                #    "DB files in " + db_thread + "\n" +
+                                "https://github.com/Timm04/timmbookmarkbot")
 
-                            #The [{}] regex
-                            if "[{" and "}]" in historical_message.content:
-                                description = re.findall(
-                                    '\[\{(.*?)\}\]', historical_message.content)[0]
-                                text = str(description).strip("['']")
-                                list.append((num, " " + msgSplit[1] + " " + str(
-                                    historical_message.author) + "\n" + text, historical_message.jump_url))
-                            elif len(historical_message.content) > maxChar:
-                                list.append((num, " " + msgSplit[1] + " " + str(historical_message.author) +
-                                            "\n" + historical_message.content[:maxChar] + "\n", historical_message.jump_url))
-                            elif len(historical_message.content) == 0:
-                                list.append((num, " " + msgSplit[1] + " " + str(
-                                    historical_message.author) + "\n" + "File", historical_message.jump_url))
-                            else:
-                                list.append((num, " " + msgSplit[1] + " " + str(
-                                    historical_message.author) + "\n" + historical_message.content, historical_message.jump_url))
+                # threads = message.channel.threads
+                # for thread in threads:
+                #     await thread.send(str(waittime_string), file=discord.File(r'bookmark-list.db'))
 
-                            con = sqlite3.connect('bookmark-list.db')
-                            cur = con.cursor()
-                            insert_query = f"INSERT INTO {today_date_string} (reaction_amount, author, content, link) VALUES (?,?,?,?)"
-                            value_query = (int(num), str(historical_message.author), str(historical_message.content), str(historical_message.jump_url))
-                            cur.execute(insert_query, value_query)
-                            con.commit()
-                            con.close()
+                # Waiting till new list is posted
+                await asyncio.sleep(wait_time)
+                # Deleting list
+                await channel.purge(limit=delete_Limit)
+                print("Waiting for t.find message")
 
-            bubblesort(list, lower_first=False)
-            sortedList = list
-            delete_Limit = len(sortedList)
-            list_items = len(sortedList)
-            channel = client.get_channel(int(message.channel.id))
-            count = 1
-            #List output
-            for (x, y, z) in sortedList:
-                response = (x, y, z)
-                # await message.channel.send(" ".join(str(v) for v in response))
-                await message.channel.send("__**" + str(count) + "# " + "**__" + "\n" + (" ".join(str(v) for v in response)))
-                count += 1
-
-            channel = client.get_channel(int(message.channel.id))
-            #Link to highest bookmarked message
-            async for first_message in channel.history(oldest_first=True, limit=1):
-                first_list_link = first_message.jump_url
-            await message.channel.send("Jump to the highest bookmarked message: " + str(first_list_link))
-
-            fetch_channel_link = "<#" + fetch_channel + ">"
-            today = datetime.datetime.today()
-            global deltime
-            # Change timedelta to change the wait time for the next list
-            now = datetime.datetime.today()
-            then = datetime.datetime.today() + timedelta(hours=deltime)
-            wait_time = (then - now).total_seconds()
-
-            waittime = datetime.datetime.today()
-            waittime_string = waittime.strftime("%Y/%m/%d %H:%M:%S")
-
-            #consol output for me
-            print(str(waittime_string) + ": Waiting for list deletion " +
-                  str(wait_time) + " seconds")
-            print("Output time:" + " %s seconds " %
-                  round((time.time() - start_time), 2))
-            
-            db_thread = "<#" + 1008685718131986493 + ">"
-
-            await channel.edit(topic="Jump to the highest bookmarked message " + first_list_link + "\n" +
-                                    "\n" +
-                                    "**About**" + "\n" +
-                                    "List from " + str(waittime_string) + " (UTC)" + "\n" +
-                                    "Next refresh in " + str(deltime) + "hours" + "\n" +
-                                    "Scraped from " + fetch_channel_link + "\n" +
-                                    "Output time:" + " %s seconds " % round((time.time() - start_time), 2) + "\n" +
-                                    "List length: " + str(list_items) + "\n" +
-                                    "For more info see https://timm-1.gitbook.io/bookmarklistbot/" + "\n" +
-                                    "DB files in " + db_thread)
-                                    
-            threads = message.channel.threads
-            for thread in threads:
-                await thread.send(str(waittime_string),file=discord.File(r'bookmark-list.db'))
-
-            #Waiting till new list is posted
-            await asyncio.sleep(wait_time)
-            #Deleting list
-            await channel.purge(limit=delete_Limit)
-            print("Waiting for t.find message")
-
-            #Post the command for the list output
-            await automation()
+                # Post the command for the list output
+                await automation()
     await client.process_commands(message)
 
 client.run(os.getenv('TOKEN'))
