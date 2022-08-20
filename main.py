@@ -513,13 +513,13 @@ async def on_message(message):
                 words = cur.fetchall()
 
                 # List output
-                for (reaction_count, a, message_content, message_link, message_date, message_attachments) in sortedList:
+                for (reaction_count, raw_username, message_content, message_link, message_date, message_attachments) in sortedList:
                     #if message_date < utc.localize(startw0) and message_date > utc.localize(endw1):
                     if utc.localize(message_date) < utc.localize(startw0) and utc.localize(message_date) > utc.localize(endw1):
                         message_date = message_date.strftime("%Y/%m/%d %H:%M:%S %Z%z")
     
-                        if a.name == "Deleted User":
-                            a = "Deleted User"
+                        if raw_username.name == "Deleted User":
+                            raw_username = "Deleted User"
                             if message_attachments == []:
                                 b = 0
                                 displayed_keywords = []
@@ -531,7 +531,7 @@ async def on_message(message):
                                         displayed_keywords.append(keyword)
                                         b += 1
                                 embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                 await message.channel.send(embed=embed)
                             elif message_attachments != []:
                                 a = 0
@@ -550,17 +550,17 @@ async def on_message(message):
                                                 b += 1
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             embed.set_thumbnail(url=image_url)
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             embed.set_thumbnail(url=image_url)
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             embed.set_thumbnail(url=image_url)
                                             await message.channel.send(embed=embed)
                                         a += 1
@@ -576,20 +576,20 @@ async def on_message(message):
                                                 b += 1
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         a += 1
                             count += 1
                         else:
-                            user = await client.fetch_user(int(a.id))
+                            user = await client.fetch_user(int(raw_username.id))
                             pfp = user.avatar_url
                             if message_attachments == []:
                                 b = 0
@@ -603,15 +603,15 @@ async def on_message(message):
                                         b += 1
                                 if len(displayed_keywords) == 3:
                                     embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                    embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                    embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                     await message.channel.send(embed=embed)
                                 elif len(displayed_keywords) == 2:
                                     embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                    embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                    embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                     await message.channel.send(embed=embed)
                                 elif len(displayed_keywords) == 1:
                                     embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                    embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                    embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                     await message.channel.send(embed=embed)
                             elif message_attachments != []:
                                 a = 0
@@ -631,17 +631,17 @@ async def on_message(message):
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
                                             embed.set_thumbnail(url=image_url)
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
                                             embed.set_thumbnail(url=image_url)
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
                                             embed.set_thumbnail(url=image_url)
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         a += 1
                                     else:
@@ -656,23 +656,23 @@ async def on_message(message):
                                                 b += 1
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         a += 1
                             count += 1
                     #not red marking
                     else:
                         message_date = message_date.strftime("%Y/%m/%d %H:%M:%S %Z%z")
-                        if a.name == "Deleted User":
-                            a = "Deleted User"
+                        if raw_username.name == "Deleted User":
+                            raw_username = "Deleted User"
                             if message_attachments == []:
                                 b = 0
                                 displayed_keywords = []
@@ -684,7 +684,7 @@ async def on_message(message):
                                         displayed_keywords.append(keyword)
                                         b += 1
                                 embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})') 
-                                embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                 await message.channel.send(embed=embed)
                             elif message_attachments != []:
                                 a = 0
@@ -703,17 +703,17 @@ async def on_message(message):
                                                 b += 1
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             embed.set_thumbnail(url=image_url)
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             embed.set_thumbnail(url=image_url)
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             embed.set_thumbnail(url=image_url)
                                             await message.channel.send(embed=embed)
                                         a += 1
@@ -729,20 +729,20 @@ async def on_message(message):
                                                 b += 1
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         a += 1
                             count += 1
                         else:
-                            user = await client.fetch_user(int(a.id))
+                            user = await client.fetch_user(int(raw_username.id))
                             pfp = user.avatar_url
                             if message_attachments == []:
                                 b = 0
@@ -756,15 +756,15 @@ async def on_message(message):
                                         b += 1
                                 if len(displayed_keywords) == 3:
                                     embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})') 
-                                    embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                    embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                     await message.channel.send(embed=embed)
                                 elif len(displayed_keywords) == 2:
                                     embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})') 
-                                    embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                    embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                     await message.channel.send(embed=embed)
                                 elif len(displayed_keywords) == 1:
                                     embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})') 
-                                    embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                    embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                     await message.channel.send(embed=embed)
                             elif message_attachments != []:
                                 a = 0
@@ -784,17 +784,17 @@ async def on_message(message):
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})') 
                                             embed.set_thumbnail(url=image_url)
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})') 
                                             embed.set_thumbnail(url=image_url)
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})') 
                                             embed.set_thumbnail(url=image_url)
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         a += 1
                                     else:
@@ -809,19 +809,22 @@ async def on_message(message):
                                                 b += 1
                                         if len(displayed_keywords) == 3:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 2:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         elif len(displayed_keywords) == 1:
                                             embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})') 
-                                            embed.set_footer(icon_url=(pfp), text=f'From {a}  |  Posted at {message_date}')
+                                            embed.set_footer(icon_url=(pfp), text=f'From {raw_username}  |  Posted at {message_date}')
                                             await message.channel.send(embed=embed)
                                         a += 1
                             count += 1
 
+                con.commit()
+                con.close()
+                
                 channel = client.get_channel(int(message.channel.id))
                 # Link to highest bookmarked message
                 async for first_message in channel.history(oldest_first=True, limit=1):
