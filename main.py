@@ -426,6 +426,7 @@ async def on_message(message):
     if message.author.id == 997928130327085096:
         if message.content.startswith(f't.find'):
                 await message.delete()
+                preparing_msg = await channel.send("Preparing new list...")
                 start_time = time.time()
                 num = 0
                 msgSplit = message.content.split(" ")
@@ -527,7 +528,8 @@ async def on_message(message):
                 global look_back_days
                 startw0 = datetime.datetime.today()
                 endw1 = startw0 - timedelta(look_back_days)
-
+                await preparing_msg.delete()
+                await asyncio.sleep(2)
                 # List output
                 for (reaction_count, a, message_content, message_link, message_date, message_attachments) in sortedList:
                     if message_date < utc.localize(startw0) and message_date > utc.localize(endw1):
