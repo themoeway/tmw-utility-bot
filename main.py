@@ -530,9 +530,18 @@ async def on_message(message):
                                         keyword = keywords[0]
                                         displayed_keywords.append(keyword)
                                         b += 1
-                                embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
-                                embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
-                                await message.channel.send(embed=embed)
+                                if len(displayed_keywords) == 3:
+                                    embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]} | {displayed_keywords[2]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
+                                    embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
+                                    await message.channel.send(embed=embed)
+                                elif len(displayed_keywords) == 2:
+                                    embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]} | {displayed_keywords[1]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
+                                    embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
+                                    await message.channel.send(embed=embed)
+                                elif len(displayed_keywords) == 1:
+                                    embed = discord.Embed(title=f'__**{count}#**__     {reaction_count} {msgSplit[1]}       {displayed_keywords[0]}',description=f'{message_content} \n [Link]({message_link})', color=discord.Color.from_rgb(255, 0, 0)) 
+                                    embed.set_footer(text=f'From {raw_username}  |  Posted at {message_date}')
+                                    await message.channel.send(embed=embed)
                             elif message_attachments != []:
                                 a = 0
                                 for image in message_attachments:
