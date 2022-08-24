@@ -20,7 +20,7 @@ class BotManager(commands.Cog):
     @commands.has_any_role("Moderator", "Administrator", "第四話　雨、逃げ出した後")
     async def update(self, ctx):
         """Pull update to ubuntu server."""
-        repo = git.Repo('/home/ubuntu/djt_bot_3')
+        repo = git.Repo('')
         repo.remotes.origin.pull()
         await ctx.send("Pulled updated.")
 
