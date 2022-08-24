@@ -12,8 +12,6 @@ class BotManager(commands.Cog):
     async def reload_cog(self, ctx, cog_name):
         self.bot.reload_extension("cogs." + cog_name)
         self.bot.dispatch("ready")
-        # Manually dispatching an event is very bad in this case and could lead to breakage. When I have time I will
-        # rewrite the cogs to address this issue and properly enable reloading.
         await ctx.send(f"Reloaded the cog: {cog_name}")
 
     @commands.command(hidden=True)
