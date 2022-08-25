@@ -36,14 +36,13 @@ class List(commands.Cog):
         cur = con.cursor()
         cur.execute("SELECT discord_user_id, message_id FROM bookmarked_messages")
         database = cur.fetchall()
+        channel = self.bot.get_channel(payload.channel_id)
+        reaction_message = await channel.fetch_message(payload.message_id)
         message_ids = []
         for row in database:
             message_ids.append(row[1])
-        #payload id cannot be identifed in message_ids ???
-        if payload.message_id in message_ids:
-            return
-        else:
-            return
+        if reaction_message.id in message_ids:
+            return "exist"
 
     async def keyword_assignment(self, payload):
         con = sqlite3.connect("words.db")
