@@ -90,8 +90,7 @@ class fill_message_db(commands.Cog):
     async def fetch_messages(self, reaction_message):
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
-        channel = self.bot.get_channel(int(self.fetch_channel.id))
-        print(self.fetch_channel.id)
+        channel = await self.bot.fetch_channel(int(fetch_channel_id))
         async for reaction_message in channel.history(limit=history_limit):
             for reaction in reaction_message.reactions:
                 if reaction.emoji == "🔖":
