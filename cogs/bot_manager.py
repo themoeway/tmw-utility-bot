@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 import git
+import os
+
 
 class BotManager(commands.Cog):
 
@@ -8,19 +10,27 @@ class BotManager(commands.Cog):
         self.bot = bot
 
     @commands.command(hidden=True)
-    @commands.has_any_role("Moderator", "Administrator", "第四話　雨、逃げ出した後")
-    async def reload_cog(self, ctx, cog_name):
-        self.bot.reload_extension("cogs." + cog_name)
-        self.bot.dispatch("ready")
-        await ctx.send(f"Reloaded the cog: {cog_name}")
+    async def reload_cog(self, ctx, cog: str):
+        try:
+            await self.bot.reload_extension("cogs." + cog)
+        except Exception as e:
+            await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
+            await ctx.message.author.send(f"Could not unload {cog}")
+            return
+        if cog == "all":
+            for filename in os.listdir("./cogs"):
+                if filename.endswith(".py"):
+                    await self.bot.reload_extension(f"cogs.{filename[:-3]}")
+                    print(f"Reloaded the following cog: {filename}")
+        else:
+            print(f"Reloaded the following cog: {cog}")
 
     @commands.command(hidden=True)
-    @commands.has_any_role("Moderator", "Administrator", "第四話　雨、逃げ出した後")
     async def update(self, ctx):
-        """Pull update to ubuntu server."""
-        repo = git.Repo('')
+        repo = git.Repo("bookmarkbot")
         repo.remotes.origin.pull()
         await ctx.send("Pulled updated.")
+
 
 async def setup(bot):
     await bot.add_cog(BotManager(bot))
