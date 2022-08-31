@@ -39,7 +39,7 @@ class HelpInfo(commands.Cog):
     # Perform on Start-up
     @commands.Cog.listener()
     async def on_ready(self):
-        presence_message = "$help for commands."
+        presence_message = "kt$help for commands."
         await self.bot.change_presence(activity=discord.Game(presence_message))
         print(f"Logged in as\n\tName: {self.bot.user.name}\n\tID: {self.bot.user.id}")
         print(f"Running pycord version: {discord.__version__}")
