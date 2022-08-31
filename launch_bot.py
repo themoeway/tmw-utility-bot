@@ -6,7 +6,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.reactions = True
 intents.guilds = True
-ouken = commands.Bot(command_prefix='$', intents=intents)
+ouken = commands.Bot(command_prefix='kt$', intents=intents)
 
 # @bot.check
 # def check_guild(ctx):
