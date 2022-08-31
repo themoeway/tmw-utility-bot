@@ -8,8 +8,6 @@ with open("cogs/jsons/settings.json") as json_file:
     data_dict = json.load(json_file)
     amount = data_dict["amount"]
     history_limit = data_dict["history_limit"]
-    output_channel_id = data_dict["bookmark-list"]
-    fetch_channel_id = data_dict["resource-sharing"]
     max_char = data_dict["max_char"]
     guild_id = data_dict["guild_id"]
 
@@ -24,7 +22,6 @@ class Filling_db(commands.Cog):
         self.myguild = self.bot.get_guild(guild_id)
 
     async def removing_pings(self, reaction_message):
-        print("removing pings")
         split_message = reaction_message.content.split()
         user_id_list = []
         for e in split_message:
@@ -49,7 +46,6 @@ class Filling_db(commands.Cog):
         return reaction_message.content
 
     async def thumbnail(self, reaction_message):
-        print("adding thumbnail")
         if reaction_message.attachments != []:
             a = 0
             for image in reaction_message.attachments:
@@ -63,7 +59,6 @@ class Filling_db(commands.Cog):
         return
 
     async def keyword_assignment(self, reaction_message):
-        print("adding keywords")
         con = sqlite3.connect('words.db')
         cur = con.cursor()
         cur.execute(f"SELECT * FROM 'resource_sharing' ORDER BY freqs DESC")
@@ -116,6 +111,7 @@ class Filling_db(commands.Cog):
         print("done fetching")
         
     @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
     async def fill_db(self, ctx, channel_name):
         all_text_channels = []
         for server in self.bot.guilds:

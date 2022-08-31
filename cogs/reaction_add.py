@@ -14,6 +14,10 @@ with open("cogs/jsons/settings.json") as json_file:
     data_dict = json.load(json_file)
     amount = data_dict["amount"]
     guild_id = data_dict["guild_id"]
+    
+with open("cogs/jsons/filter.json") as file:
+    data = json.load(file)
+    ids = data["filter"]
 
 #############################################################
 
@@ -29,12 +33,15 @@ class reaction_add(commands.Cog):
         self.log_channel = discord.utils.get(self.myguild.channels, name="bookmark-list")
 
     async def count_reactions(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        reaction_message = await channel.fetch_message(payload.message_id)
-        for reaction in reaction_message.reactions:
-            if reaction.emoji == '🔖':
-                if reaction.count >= amount:
-                    return reaction.count
+        if payload.message_id not in ids:
+            channel = self.bot.get_channel(payload.channel_id)
+            reaction_message = await channel.fetch_message(payload.message_id)
+            for reaction in reaction_message.reactions:
+                if reaction.emoji == '🔖':
+                    if reaction.count >= amount:
+                        return reaction.count
+        else:
+            return "filtered"
 
     async def new_or_old_message(self, payload):
         con = sqlite3.connect('bookmarked-messages.db')
@@ -89,6 +96,7 @@ class reaction_add(commands.Cog):
         con.close()
 
     async def update_db(self, payload):
+        displayed_keywords = await self.keyword_assignment(payload)
         channel = self.bot.get_channel(payload.channel_id)
         reaction_message = await channel.fetch_message(payload.message_id)
         con = sqlite3.connect('bookmarked-messages.db')
@@ -98,8 +106,8 @@ class reaction_add(commands.Cog):
         reaction_messages = cur.fetchall()
         for match in reaction_messages:
             if match != reaction_message.reaction.count or match != reaction_message.content:
-                cur.execute("UPDATE bookmarked_message SET bookmarks=? and content=? WHERE message_id=?", (int(
-                    reaction_message.reaction.count), "\n" + str(reaction_message.content), int(reaction_message.id)))
+                cur.execute("UPDATE bookmarked_message SET bookmarks=? and content=? and keywords=? WHERE message_id=?", (int(
+                    reaction_message.reaction.count), "\n" + str(reaction_message.content), int(reaction_message.id), str(displayed_keywords)))
         con.commit()
         con.close()
 
@@ -108,7 +116,7 @@ class reaction_add(commands.Cog):
         if payload.channel_id != self.log_channel:
             await asyncio.sleep(0.25)
             enough_reactions = await self.count_reactions(payload)
-            if enough_reactions:
+            if enough_reactions != "filtered":
                 await asyncio.sleep(0.25)
                 bookmarked_message = await self.new_or_old_message(payload)
                 if bookmarked_message != "exist":

@@ -10,6 +10,7 @@ class BotManager(commands.Cog):
         self.bot = bot
 
     @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
     async def reload(self, ctx, cog):
         try:
             if not cog == "all":
@@ -26,6 +27,7 @@ class BotManager(commands.Cog):
             return
 
     @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
     async def update(self, ctx):
         repo = git.Repo("bookmarkbot")
         repo.remotes.origin.pull()

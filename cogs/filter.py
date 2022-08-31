@@ -7,6 +7,10 @@ import json
 with open("cogs/jsons/settings.json") as json_file:
     data_dict = json.load(json_file)
     guild_id = data_dict["guild_id"]
+    
+with open("cogs/jsons/roles.json", encoding="utf-8") as file:
+    data = json.load(file)
+    roles = data["roles"]
 
 #############################################################
 
@@ -25,9 +29,13 @@ class Filter(commands.Cog):
             data["filter"].append(id)
             file.seek(0)
             json.dump(data, file)
-                
-    @commands.command()
+            
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
     async def filter(self, ctx, id):
+        """
+        Excludes messages.
+        """
         if id.isnumeric():
             id = int(id)
             await self.json_change(id)
