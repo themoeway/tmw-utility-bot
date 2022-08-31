@@ -22,10 +22,10 @@ class Filter(commands.Cog):
     async def json_change(self, id):
         with open("cogs/jsons/filter.json", "r+") as file:
             data = json.load(file)
-            change = data["filter"].append(id)
-            json.dump(change, file)
-            print("fone")
-    
+            data["filter"].append(id)
+            file.seek(0)
+            json.dump(data, file)
+                
     @commands.command()
     async def filter(self, ctx, id):
         if id.isnumeric():
