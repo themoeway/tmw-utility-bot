@@ -16,7 +16,7 @@ class MyHelpCommand(commands.MinimalHelpCommand):
         if commands:
             lines = []
             for command in commands:
-                commandline = f"`${command.name}` {command.help}"
+                commandline = f"`kt${command.name}` {command.help}"
                 lines.append(commandline)
 
             joined = '\n'.join(lines)

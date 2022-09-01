@@ -9,8 +9,11 @@ from datetime import timedelta
 #############################################################
 
 with open("cogs/jsons/settings.json") as json_file:
-    data_dict = json.load(json_file)
-    guild_id = data_dict["guild_id"]
+    data = json.load(json_file)
+    guild_id = data["guild_id"]
+    
+with open("cogs/jsons/info.json") as file:
+    data_dict = json.load(file)
 
 #############################################################
 
@@ -27,6 +30,12 @@ class Extras(commands.Cog):
         """Get a link to the github repository hosting the code for this bot."""
         link = "https://github.com/Timm04/timmbookmarkbot"
         await ctx.send(link)
+    
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
+    async def settings(self, ctx):
+        """Displays the settings."""
+        await ctx.send(f'```json\n{json.dumps(data, indent=4, sort_keys=True)}\n```')
                 
 def setup(bot):
     bot.add_cog(Extras(bot))

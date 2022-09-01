@@ -3,6 +3,7 @@ from discord.ext import commands
 import sqlite3
 import json
 import re
+import datetime
 
 with open("cogs/jsons/settings.json") as json_file:
     data_dict = json.load(json_file)
@@ -78,6 +79,9 @@ class Filling_db(commands.Cog):
         return displayed_keywords
 
     async def fetch_messages(self, fetch_channel):
+        log = datetime.datetime.today()
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Fetching {fetch_channel}')
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
         channel = await self.bot.fetch_channel(int(fetch_channel))
@@ -99,13 +103,13 @@ class Filling_db(commands.Cog):
                         elif reaction_message.attachments and len(reaction_message.content) == 0:
                             for naming in reaction_message.attachments:
                                 reaction_message.content = naming.filename
-                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)', (int(reaction_message.author.id), int(reaction_amount), int(reaction_message.id), "\n" + str(reaction_message.content[:max_char]), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message_image), str(displayed_keywords)))
+                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)', (int(reaction_message.author.id), int(reaction_amount), int(reaction_message.id), "\n" + str(reaction_message.content), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message_image), str(displayed_keywords)))
                             con.commit()
                         elif len(reaction_message.content) > max_char:
-                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)',(int(reaction_message.author.id), int(reaction.count), int(reaction_message.id), str(reaction_message.content), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message.attachments), str(displayed_keywords)))
+                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)',(int(reaction_message.author.id), int(reaction.count), int(reaction_message.id), str(reaction_message.content[:max_char]), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message.attachments), str(displayed_keywords)))
                             con.commit()
                         else:
-                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)', (int(reaction_message.author.id), int(reaction_amount), int(reaction_message.id), "\n" + str(reaction_message.content[:max_char]), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message_image), str(displayed_keywords)))
+                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)', (int(reaction_message.author.id), int(reaction_amount), int(reaction_message.id), "\n" + str(reaction_message.content), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message_image), str(displayed_keywords)))
                             con.commit()
         con.close()
         print("done fetching")

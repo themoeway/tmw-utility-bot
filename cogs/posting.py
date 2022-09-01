@@ -41,30 +41,36 @@ class Posting(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.myguild = self.bot.get_guild(guild_id)
-        self.log_channel = discord.utils.get(self.myguild.channels, name="bookmark-list")
-        self.log_channel_id = self.log_channel.id
+        # self.log_channel = discord.utils.get(self.myguild.channels, name="bookmark-list")
+        # self.log_channel_id = self.log_channel.id
 
-    async def delete(self, ctx):
+    async def delete(self, ctx, channel):
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
         cur.execute(f"SELECT * FROM bookmarked_messages")
         info = cur.fetchall()
-        limit = len(info)+5
-        await self.log_channel.purge(limit=limit)
+        limit = len(info)+2
+        await channel.purge(limit=limit)
 
-    async def recursion(self, ctx):
+    async def recursion(self, ctx, channel):
+        log = datetime.datetime.today()
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Waiting for list deletion')
         await asyncio.sleep(wait_time)
-        await self.delete(ctx)
-        await self.create_message(ctx)
+        await self.delete(ctx, channel)
+        await self.create_message(ctx, channel)
     
-    async def create_message(self, ctx):
-        channel = await self.bot.fetch_channel(int(output_channel_id))
+    async def create_message(self, ctx, channel):
+        log = datetime.datetime.today()
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Wating for list output')
+        await asyncio.sleep(15)
         utc = pytz.UTC
         startw0 = datetime.datetime.today()
-        print(startw0)
         endw1 = startw0 - timedelta(int(look_back_days))
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
+        #cur.execute(f"SELECT * FROM bookmarked_messages WHERE bookmarks=10")
         cur.execute(f"SELECT * FROM bookmarked_messages ORDER BY bookmarks DESC")
         info = cur.fetchall()
 
@@ -80,27 +86,61 @@ class Posting(commands.Cog):
                 if create_date < utc.localize(startw0) and create_date > utc.localize(endw1):
                     create_date = create_date.strftime("%b %d %Y")
                     red_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content} \n [Link]({link})', color=discord.Color.from_rgb(255, 0, 0))
-                    user = await self.bot.fetch_user(int(user_id))
-                    pfp = user.avatar.url
-                    red_embed.set_footer(icon_url=(pfp), text=f'From {user.name}  |  Posted at {create_date}')
-                    if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
-                        red_embed.set_thumbnail(url=attachments)
-                    await channel.send(embed=red_embed)
-                    count += 1
+                    try:
+                        user = await self.bot.fetch_user(int(user_id))
+                    except Exception:
+                        user_name = "Deleted User"
+                        red_embed.set_footer(text=f'From {user_name}  |  Posted on {create_date}')
+                        if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                            red_embed.set_thumbnail(url=attachments)
+                        await channel.send(embed=red_embed)
+                        count += 1
+                    else:
+                        try:
+                            pfp = user.avatar.url
+                        except Exception:
+                            red_embed.set_footer(text=f'From {user}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                red_embed.set_thumbnail(url=attachments)
+                            await channel.send(embed=red_embed)
+                            count += 1
+                        else:
+                            red_embed.set_footer(icon_url=(pfp), text=f'From {user}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                red_embed.set_thumbnail(url=attachments)
+                            await channel.send(embed=red_embed)
+                            count += 1
                 else:
                     create_date = create_date.strftime("%b %d %Y")
                     my_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content} \n [Link]({link})')
-                    user = await self.bot.fetch_user(int(user_id))
-                    pfp = user.avatar.url
-                    my_embed.set_footer(icon_url=(pfp), text=f'From {user.name}  |  Posted at {create_date}')
-                    if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
-                        my_embed.set_thumbnail(url=attachments)
-                    await channel.send(embed=my_embed)
-                    count += 1
+                    try:
+                        user = await self.bot.fetch_user(int(user_id))
+                    except Exception:
+                        user_name = "Deleted User"
+                        my_embed.set_footer(text=f'From {user}  |  Posted on {create_date}')
+                        if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                            my_embed.set_thumbnail(url=attachments)
+                        await channel.send(embed=my_embed)
+                        count += 1
+                    else:
+                        try:
+                            pfp = user.avatar.url
+                        except Exception:
+                            my_embed.set_footer(text=f'From {user}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                my_embed.set_thumbnail(url=attachments)
+                            await channel.send(embed=my_embed)
+                            count += 1
+                        else:
+                            my_embed.set_footer(icon_url=(pfp), text=f'From {user}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                my_embed.set_thumbnail(url=attachments)
+                            await channel.send(embed=my_embed)
+                            count += 1
 
         await self.keyword_assignment()
         await self.changelog(ctx, channel)
-    
+        
     async def keyword_assignment(self):
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
@@ -125,59 +165,53 @@ class Posting(commands.Cog):
             for word, frequency in sorted_freq.items():
                 f.write(f"{word}: {frequency} \n")
         con.close()
+        log = datetime.datetime.today()
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Updated catergories.txt')
+        
+    async def info_output(self):
+        con = sqlite3.connect('bookmarked-messages.db')
+        cur = con.cursor()
+        cur.execute(f"SELECT * FROM bookmarked_messages")
+        info = cur.fetchall()
+        list_length = len(info)
+        list_date = datetime.datetime.today()
+        list_date = list_date.strftime("%Y/%m/%d %H:%M:%S")
+        list_del_time = datetime.datetime.today() + timedelta(seconds=wait_time)
+        list_del_time = list_del_time.strftime("%b %d %Y %H:%M:%S %Z")
+        log = datetime.datetime.today() 
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Updated info.json')
+        
+        return list_length, list_date, list_del_time
     
     async def create_embed(self, ctx):
         date = datetime.datetime.today()
         date = date.strftime("%b %d %Y")
-        con = sqlite3.connect('bookmarked-messages.db')
-        cur = con.cursor()
-        cur.execute(
-            f"SELECT bookmarks, link FROM bookmarked_messages ORDER BY bookmarks ASC LIMIT 1")
-        first_list_link = cur.fetchone()[1]
-        info_embed = discord.Embed(title=f'Jump to the highest bookmarked message',color=discord.Color.from_rgb(255, 255, 255), url=first_list_link)
+        channel = await self.bot.fetch_channel(int(output_channel_id))
+        async for first_message in channel.history(limit=int(1), oldest_first = True):
+            first_list_link = first_message.jump_url
+        list_length, list_date, list_del_time = await self.info_output()
+        info_embed = discord.Embed(title=f'Jump to the highest bookmarked message',description=f'List from {list_date}\nLength is {list_length}\nNext refresh on {list_del_time} hrs' ,color=discord.Color.from_rgb(255, 255, 255), url=first_list_link)
         info_embed.add_field(name=f'{title}', value=f'{content}')
         user = await self.bot.fetch_user(int(bot_id))
         pfp = user.avatar.url
-        info_embed.set_footer(icon_url=(pfp), text=f'From {ctx.message.author}  |  List from {date}')
+        info_embed.set_footer(icon_url=(pfp), text=f'From {user}  |  List from {date}')
 
         return info_embed
     
     async def changelog(self, ctx, channel):
         info_embed = await self.create_embed(ctx)
         await channel.send(embed=info_embed)
-        await self.recursion(ctx)
+        await self.recursion(ctx, channel)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def start(self, ctx):
-        msg_1 = await ctx.send(f'Do you want to preceed with these settings? Yes/No \n```json\n {json.dumps(data_dict, indent=4, sort_keys=True)}\n```')
-        def user_check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
+    async def start(self, ctx, channel):
+        channel_id = channel.strip("<#>")
+        channel = await self.bot.fetch_channel(int(channel_id))
+        await self.create_message(ctx, channel)
 
-        msg = await self.bot.wait_for("message", check=user_check, timeout=60)
-        allowed = ["Yes", "y", "yes", "YES", "Y"]
-        if msg.content in allowed:
-            msg_2 = await ctx.send("Settings have been saved. Starting fetch in 3...")
-            await asyncio.sleep(0.5)
-            await msg_2.delete()
-            await asyncio.sleep(0.5)
-            await msg.delete()
-            await asyncio.sleep(0.5)
-            await msg_1.delete()
-            await asyncio.sleep(0.5)
-            await ctx.message.delete()
-            await self.create_message(ctx)
-        else:
-            msg_3 = await ctx.send("Cancelled quick setup.")
-            await asyncio.sleep(0.5)
-            await msg_3.delete()
-            await asyncio.sleep(0.5)
-            await msg.delete()
-            await asyncio.sleep(0.5)
-            await msg_1.delete()
-            await asyncio.sleep(0.5)
-            await ctx.message.delete()
-            
-
+        
 def setup(bot):
     bot.add_cog(Posting(bot))

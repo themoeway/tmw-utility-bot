@@ -34,8 +34,10 @@ class Category(commands.Cog):
         """
         await ctx.message.author.send(file=discord.File(r'catergories.txt'))
         
-    async def create_message(self, ctx, keyword):
-        channel = await self.bot.fetch_channel(int(fetch_channel_id))
+    async def create_message(self, command_user, keyword):
+        log = datetime.datetime.today()
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Wating for category output')
         utc = pytz.UTC
         startw0 = datetime.datetime.today()
         endw1 = startw0 - timedelta(int(look_back_days))
@@ -49,28 +51,63 @@ class Category(commands.Cog):
             if keyword in keywords:
                 keywords = re.sub("\[\'|\'\]|'|  |,", "", keywords)
                 keywords = keywords.replace(" ", " | ")
-                message = await channel.fetch_message(message_id)
-                if message.created_at < utc.localize(startw0) and message.created_at > utc.localize(endw1):
+                create_date = datetime.datetime.strptime(create_date, "%Y-%m-%d %H:%M:%S.%f%z")
+                if create_date < utc.localize(startw0) and create_date > utc.localize(endw1):
                     red_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content} \n [Link]({link})', color=discord.Color.from_rgb(255, 0, 0))
-                    user = await self.bot.fetch_user(int(user_id))
-                    pfp = user.avatar.url
-                    red_embed.set_footer(icon_url=(pfp), text=f'From {user.name}  |  Posted at {create_date}')
-                    if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
-                        red_embed.set_thumbnail(url=attachments)
-                    await ctx.message.author.send(embed=red_embed)
-                    count += 1
+                    try:
+                        user = await self.bot.fetch_user(int(user_id))
+                    except Exception:
+                        user_name = "Deleted User"
+                        red_embed.set_footer(text=f'From {user_name}  |  Posted on {create_date}')
+                        if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                            red_embed.set_thumbnail(url=attachments)
+                        await command_user.send(embed=red_embed)
+                        count += 1
+                    else:
+                        try:
+                            pfp = user.avatar.url
+                        except Exception:
+                            red_embed.set_footer(text=f'From {user.name}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                red_embed.set_thumbnail(url=attachments)
+                            await command_user.send(embed=red_embed)
+                            count += 1
+                        else:
+                            red_embed.set_footer(icon_url=(pfp), text=f'From {user.name}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                red_embed.set_thumbnail(url=attachments)
+                            await command_user.send(embed=red_embed)
+                            count += 1
                 else:
+                    create_date = create_date.strftime("%b %d %Y")
                     my_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content} \n [Link]({link})')
-                    user = await self.bot.fetch_user(int(user_id))
-                    pfp = user.avatar.url
-                    my_embed.set_footer(icon_url=(pfp), text=f'From {user.name}  |  Posted at {create_date}')
-                    if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
-                        my_embed.set_thumbnail(url=attachments)
-                    await ctx.message.author.send(embed=my_embed)
-                    count += 1
+                    try:
+                        user = await self.bot.fetch_user(int(user_id))
+                    except Exception:
+                        user_name = "Deleted User"
+                        my_embed.set_footer(text=f'From {user.name}  |  Posted on {create_date}')
+                        if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                            my_embed.set_thumbnail(url=attachments)
+                        await command_user.send(embed=my_embed)
+                        count += 1
+                    else:
+                        try:
+                            pfp = user.avatar.url
+                        except Exception:
+                            my_embed.set_footer(text=f'From {user.name}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                my_embed.set_thumbnail(url=attachments)
+                            await command_user.send(embed=my_embed)
+                            count += 1
+                        else:
+                            my_embed.set_footer(icon_url=(pfp), text=f'From {user.name}  |  Posted on {create_date}')
+                            if attachments.endswith(".png") or attachments.endswith(".jpg") or attachments.endswith(".jpeg"):
+                                my_embed.set_thumbnail(url=attachments)
+                            await command_user.send(embed=my_embed)
+                            count += 1
             else:
                 count += 1
-        await channel.send("Done!!!")
+        await command_user.send("Done!!!")
     
     @commands.command()      
     @commands.cooldown(4, 86400, commands.BucketType.user)    
@@ -81,17 +118,24 @@ class Category(commands.Cog):
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
         cur.execute(f"SELECT discord_user_id, keywords FROM bookmarked_messages")
+        command_user = await self.bot.fetch_user(ctx.message.author.id)
         embed_messages = cur.fetchall()
-        catagories = []
+        categories = []
         for id, keywords in embed_messages:
             if keywords != "[]":
                 keywords = re.sub("\[\'|\'\]|'|  |,", "", keywords)
-                catagories.append(keywords)   
-        for match in catagories:
-            if keyword == match:
-                return await self.create_message(ctx, keyword)
-            else:
-                return await ctx.message.author.send(f"There is no {keyword} message.")
+                categories.append(keywords) 
+        for match in categories:
+            if keyword in match:
+                try:
+                    await command_user.send("Preparing list...")
+                except Exception:
+                    await ctx.send(f'<@{command_user.id}> please change your privacy settings to ``Allow direct messages from server members.``')
+                else:
+                    return await self.create_message(command_user, keyword)
+                break
+        else:
+            return await command_user.send(f"There is no {keyword} message.")
         
         
 def setup(bot):

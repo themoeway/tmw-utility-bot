@@ -7,6 +7,7 @@ from discord.utils import get
 import asyncio
 import re
 import json
+import datetime
 
 #############################################################
 
@@ -14,6 +15,7 @@ with open("cogs/jsons/settings.json") as json_file:
     data_dict = json.load(json_file)
     amount = data_dict["amount"]
     guild_id = data_dict["guild_id"]
+    output_channel_id = data_dict["bookmark-list"]
     
 with open("cogs/jsons/filter.json") as file:
     data = json.load(file)
@@ -34,12 +36,21 @@ class reaction_add(commands.Cog):
 
     async def count_reactions(self, payload):
         if payload.message_id not in ids:
+            log = datetime.datetime.today()
+            log = log.strftime("%Y/%m/%d %H:%M:%S")
             channel = self.bot.get_channel(payload.channel_id)
             reaction_message = await channel.fetch_message(payload.message_id)
             for reaction in reaction_message.reactions:
                 if reaction.emoji == '🔖':
+                    print(f'{log} {reaction_message.jump_url} has 🔖')
                     if reaction.count >= amount:
+                        print(f'{log} {reaction_message.jump_url} has {reaction.count}')
                         return reaction.count
+                    else:
+                        print(f'{log} {reaction_message.jump_url} < {amount}')
+                        return "filtered"
+                else:
+                    return "filtered"
         else:
             return "filtered"
 
@@ -94,6 +105,9 @@ class reaction_add(commands.Cog):
                     (int(reaction_message.author.id), int(reaction.count), int(reaction_message.id), str(reaction_message.content), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message.attachments), str(displayed_keywords)))
         con.commit()
         con.close()
+        log = datetime.datetime.today()
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Added {reaction_message.jump_url} to DB')
 
     async def update_db(self, payload):
         displayed_keywords = await self.keyword_assignment(payload)
@@ -104,16 +118,22 @@ class reaction_add(commands.Cog):
         select_query = """SELECT * FROM bookmarked_messages WHERE message_id=?"""
         cur.execute(select_query, (int(reaction_message.id),))
         reaction_messages = cur.fetchall()
-        for match in reaction_messages:
-            if match != reaction_message.reaction.count or match != reaction_message.content:
-                cur.execute("UPDATE bookmarked_message SET bookmarks=? and content=? and keywords=? WHERE message_id=?", (int(
-                    reaction_message.reaction.count), "\n" + str(reaction_message.content), int(reaction_message.id), str(displayed_keywords)))
+        for reaction in reaction_message.reactions:
+            count = reaction.count
+        reaction_message_content = "\n" + str(reaction_message.content)
+        update_query = """UPDATE bookmarked_messages SET bookmarks=?, content=?, keywords=? WHERE message_id=?"""
+        cur.execute(update_query, (int(count), "\n" + str(reaction_message_content), str(displayed_keywords), int(reaction_message.id)))
         con.commit()
         con.close()
+        con = sqlite3.connect('bookmarked-messages.db')
+        cur = con.cursor()
+        log = datetime.datetime.today()
+        log = log.strftime("%Y/%m/%d %H:%M:%S")
+        print(f'{log} Updated {reaction_message.jump_url} in DB')
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if payload.channel_id != self.log_channel:
+        if payload.channel_id != int(output_channel_id):
             await asyncio.sleep(0.25)
             enough_reactions = await self.count_reactions(payload)
             if enough_reactions != "filtered":
