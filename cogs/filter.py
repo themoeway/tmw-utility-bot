@@ -31,7 +31,7 @@ class Filter(commands.Cog):
             json.dump(data, file)
             
     @commands.command(hidden=True)
-    @commands.has_permissions(administrator=True)
+    @commands.has_any_role("Moderator", "Administrator")
     async def filter(self, ctx, id):
         """
         Excludes messages.
