@@ -110,7 +110,7 @@ class Category(commands.Cog):
         await command_user.send("Done!!!")
     
     @commands.command()      
-    @commands.cooldown(4, 86400, commands.BucketType.user)    
+    @commands.cooldown(10, 86400, commands.BucketType.user)    
     async def category(self, ctx, keyword):
         """
         Outputs a list with the specified keyword
