@@ -49,7 +49,7 @@ class Posting(commands.Cog):
         cur = con.cursor()
         cur.execute(f"SELECT * FROM bookmarked_messages")
         info = cur.fetchall()
-        limit = len(info)+2
+        limit = len(info)+4
         await channel.purge(limit=limit)
 
     async def recursion(self, ctx, channel):
@@ -70,8 +70,8 @@ class Posting(commands.Cog):
         endw1 = startw0 - timedelta(int(look_back_days))
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
-        #cur.execute(f"SELECT * FROM bookmarked_messages WHERE bookmarks=10")
-        cur.execute(f"SELECT * FROM bookmarked_messages ORDER BY bookmarks DESC")
+        cur.execute(f"SELECT * FROM bookmarked_messages WHERE bookmarks=17")
+        #cur.execute(f"SELECT * FROM bookmarked_messages ORDER BY bookmarks DESC")
         info = cur.fetchall()
 
         count = 1
@@ -82,8 +82,12 @@ class Posting(commands.Cog):
                 else:
                     keywords = re.sub("\[\'|\'\]|'|  |,", "", keywords)
                     keywords = keywords.replace(" ", " | ")
+                print(create_date)
                 create_date = datetime.datetime.strptime(create_date, "%Y-%m-%d %H:%M:%S.%f%z")
+                print(create_date)
+                print(utc.localize(startw0))
                 if create_date < utc.localize(startw0) and create_date > utc.localize(endw1):
+                    print("red")
                     create_date = create_date.strftime("%b %d %Y")
                     red_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content} \n [Link]({link})', color=discord.Color.from_rgb(255, 0, 0))
                     try:
@@ -170,20 +174,15 @@ class Posting(commands.Cog):
         print(f'{log} Updated catergories.txt')
         
     async def info_output(self):
-        con = sqlite3.connect('bookmarked-messages.db')
-        cur = con.cursor()
-        cur.execute(f"SELECT * FROM bookmarked_messages")
-        info = cur.fetchall()
-        list_length = len(info)
         list_date = datetime.datetime.today()
-        list_date = list_date.strftime("%Y/%m/%d %H:%M:%S")
+        list_date = list_date.strftime("%b %d %Y %H:%M:%S %Z")
         list_del_time = datetime.datetime.today() + timedelta(seconds=wait_time)
         list_del_time = list_del_time.strftime("%b %d %Y %H:%M:%S %Z")
         log = datetime.datetime.today() 
         log = log.strftime("%Y/%m/%d %H:%M:%S")
         print(f'{log} Updated info.json')
         
-        return list_length, list_date, list_del_time
+        return list_date, list_del_time
     
     async def create_embed(self, ctx):
         date = datetime.datetime.today()
@@ -191,8 +190,8 @@ class Posting(commands.Cog):
         channel = await self.bot.fetch_channel(int(output_channel_id))
         async for first_message in channel.history(limit=int(1), oldest_first = True):
             first_list_link = first_message.jump_url
-        list_length, list_date, list_del_time = await self.info_output()
-        info_embed = discord.Embed(title=f'Jump to the highest bookmarked message',description=f'List from {list_date}\nLength is {list_length}\nNext refresh on {list_del_time} hrs' ,color=discord.Color.from_rgb(255, 255, 255), url=first_list_link)
+        list_date, list_del_time = await self.info_output()
+        info_embed = discord.Embed(title=f'Jump to the highest bookmarked message',description=f'List from {list_date}\nNext refresh on {list_del_time}' ,color=discord.Color.from_rgb(255, 255, 255), url=first_list_link)
         info_embed.add_field(name=f'{title}', value=f'{content}')
         user = await self.bot.fetch_user(int(bot_id))
         pfp = user.avatar.url
@@ -206,7 +205,7 @@ class Posting(commands.Cog):
         await self.recursion(ctx, channel)
 
     @commands.command(hidden=True)
-    @commands.has_permissions(administrator=True)
+    @commands.has_any_role("Moderator", "Administrator")
     async def start(self, ctx, channel):
         channel_id = channel.strip("<#>")
         channel = await self.bot.fetch_channel(int(channel_id))
