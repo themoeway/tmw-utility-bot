@@ -11,9 +11,6 @@ from datetime import timedelta
 with open("cogs/jsons/settings.json") as json_file:
     data = json.load(json_file)
     guild_id = data["guild_id"]
-    
-with open("cogs/jsons/info.json") as file:
-    data_dict = json.load(file)
 
 #############################################################
 
@@ -31,8 +28,14 @@ class Extras(commands.Cog):
         link = "https://github.com/Timm04/timmbookmarkbot"
         await ctx.send(link)
     
+    @commands.command()
+    async def gibook(self, ctx):
+        """Get a link to the gitbook."""
+        link = "https://timm-1.gitbook.io/bookmarklistbot/"
+        await ctx.send(link)
+    
     @commands.command(hidden=True)
-    @commands.has_permissions(administrator=True)
+    @commands.has_any_role("Moderator", "Administrator", 972574451998806126)
     async def settings(self, ctx):
         """Displays the settings."""
         await ctx.send(f'```json\n{json.dumps(data, indent=4, sort_keys=True)}\n```')
