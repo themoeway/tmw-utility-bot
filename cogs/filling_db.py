@@ -115,7 +115,7 @@ class Filling_db(commands.Cog):
         print("done fetching")
         
     @commands.command(hidden=True)
-    @commands.has_permissions(administrator=True)
+    @commands.has_any_role("Moderator", "Administrator")
     async def fill_db(self, ctx, channel_name):
         all_text_channels = []
         for server in self.bot.guilds:
