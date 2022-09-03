@@ -115,18 +115,14 @@ class reaction_add(commands.Cog):
         reaction_message = await channel.fetch_message(payload.message_id)
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
-        select_query = """SELECT * FROM bookmarked_messages WHERE message_id=?"""
-        cur.execute(select_query, (int(reaction_message.id),))
-        reaction_messages = cur.fetchall()
         for reaction in reaction_message.reactions:
-            count = reaction.count
+            if reaction.count >= amount:
+                count = reaction.count
         reaction_message_content = "\n" + str(reaction_message.content)
         update_query = """UPDATE bookmarked_messages SET bookmarks=?, content=?, keywords=? WHERE message_id=?"""
         cur.execute(update_query, (int(count), "\n" + str(reaction_message_content), str(displayed_keywords), int(reaction_message.id)))
         con.commit()
         con.close()
-        con = sqlite3.connect('bookmarked-messages.db')
-        cur = con.cursor()
         log = datetime.datetime.today()
         log = log.strftime("%Y/%m/%d %H:%M:%S")
         print(f'{log} Updated {reaction_message.jump_url} in DB')
