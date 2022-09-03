@@ -89,7 +89,7 @@ class Posting(commands.Cog):
                 if create_date < utc.localize(startw0) and create_date > utc.localize(endw1):
                     print("red")
                     create_date = create_date.strftime("%b %d %Y")
-                    red_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content} \n [Link]({link})', color=discord.Color.from_rgb(255, 0, 0))
+                    red_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content}', color=discord.Color.from_rgb(255, 0, 0), url=link)
                     try:
                         user = await self.bot.fetch_user(int(user_id))
                     except Exception:
@@ -116,7 +116,7 @@ class Posting(commands.Cog):
                             count += 1
                 else:
                     create_date = create_date.strftime("%b %d %Y")
-                    my_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content} \n [Link]({link})')
+                    my_embed = discord.Embed(title=f'__**{count}#**__     {reaction_amount} 🔖       {keywords}', description=f'{content}', url=link)
                     try:
                         user = await self.bot.fetch_user(int(user_id))
                     except Exception:
