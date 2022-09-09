@@ -54,80 +54,80 @@ class MediaCog(commands.Cog):
 
         await interaction.channel.send("Done.")
         
-    async def get_sub_timings(self, subtitle_name, subtitle_index):
-        with open(fr'data/subs/{subtitle_name}', encoding='utf-8') as subtitle_file:
-            subtitle_text = subtitle_file.read()
-            subtitle_generator = srt.parse(subtitle_text)
-            all_subtitles = list(subtitle_generator)
-            indexes_to_extract = list(range(subtitle_index-2, subtitle_index+3))
-            subtitle_lines = [subtitle for subtitle in all_subtitles if subtitle.index in indexes_to_extract]
-            content = " 　".join([subtitle.content for subtitle in subtitle_lines])
-            if len(subtitle_lines) >= 5:
-                beginning_time = subtitle_lines[1].start
-            else:
-                beginning_time = subtitle_lines[0].start - datetime.timedelta(seconds=5)
-            end_time = subtitle_lines[-1].end + datetime.timedelta(seconds=4)
-            return content, beginning_time, end_time
+#     async def get_sub_timings(self, subtitle_name, subtitle_index):
+#         with open(fr'data/subs/{subtitle_name}', encoding='utf-8') as subtitle_file:
+#             subtitle_text = subtitle_file.read()
+#             subtitle_generator = srt.parse(subtitle_text)
+#             all_subtitles = list(subtitle_generator)
+#             indexes_to_extract = list(range(subtitle_index-2, subtitle_index+3))
+#             subtitle_lines = [subtitle for subtitle in all_subtitles if subtitle.index in indexes_to_extract]
+#             content = " 　".join([subtitle.content for subtitle in subtitle_lines])
+#             if len(subtitle_lines) >= 5:
+#                 beginning_time = subtitle_lines[1].start
+#             else:
+#                 beginning_time = subtitle_lines[0].start - datetime.timedelta(seconds=5)
+#             end_time = subtitle_lines[-1].end + datetime.timedelta(seconds=4)
+#             return content, beginning_time, end_time
 
-    async def edit_results_post(self, results, results_msg, beginning_index, end_index, japanese_input):
-        myembed = discord.Embed(title=f"{len(results)} results for {japanese_input}")
-        for result in results[beginning_index:end_index]:
-            myembed.add_field(name=f"{result[0]} in {result[1]}", value=f"{result[2]}", inline=False)
-        if len(results) >= 5:
-            myembed.set_footer(text="... not all results displayed but you can pick any index.\n"
-                                    "Pick an index to retrieve a scene next.")
-        else:
-            myembed.set_footer(text="Pick an index to retrieve a scene next.")
+#     async def edit_results_post(self, results, results_msg, beginning_index, end_index, japanese_input):
+#         myembed = discord.Embed(title=f"{len(results)} results for {japanese_input}")
+#         for result in results[beginning_index:end_index]:
+#             myembed.add_field(name=f"{result[0]} in {result[1]}", value=f"{result[2]}", inline=False)
+#         if len(results) >= 5:
+#             myembed.set_footer(text="... not all results displayed but you can pick any index.\n"
+#                                     "Pick an index to retrieve a scene next.")
+#         else:
+#             myembed.set_footer(text="Pick an index to retrieve a scene next.")
 
-        await results_msg.edit(embed=myembed)
+#         await results_msg.edit(embed=myembed)
 
-    async def get_nearest_key_frame_time(self, filename, beginning_time):
-        path = "data/video/"
-        print(filename, beginning_time, path)
-        cmd = f"ffprobe -v error -skip_frame nokey -show_entries frame=pkt_pts_time -select_streams v -of csv=p=0 {path + filename}"
-        print(cmd)
-        key_frames = subprocess.check_output(cmd, shell=True).decode().split()
-        print(key_frames)
-        print("We have the following key frames: ", key_frames)
-        key_frame_times = []
-        for key_frame_seconds in key_frames:
-            print(key_frame_seconds)
-            seconds, microseconds = key_frame_seconds.split(".")
-            time = datetime.timedelta(seconds=float(seconds), microseconds=float(microseconds) - 1)
-            key_frame_times.append(time)
-        print(key_frame_times)
-        last_key_frame_time = [time for time in key_frame_times if beginning_time.total_seconds() - time.total_seconds() > 0][-1]
-        if last_key_frame_time.total_seconds() <= 0:
-            last_key_frame_time = last_key_frame_time.resolution
-        return last_key_frame_time
+#     async def get_nearest_key_frame_time(self, filename, beginning_time):
+#         path = "data/video/"
+#         print(filename, beginning_time, path)
+#         cmd = f"ffprobe -v error -skip_frame nokey -show_entries frame=pkt_pts_time -select_streams v -of csv=p=0 {path + filename}"
+#         print(cmd)
+#         key_frames = subprocess.check_output(cmd, shell=True).decode().split()
+#         print(key_frames)
+#         print("We have the following key frames: ", key_frames)
+#         key_frame_times = []
+#         for key_frame_seconds in key_frames:
+#             print(key_frame_seconds)
+#             seconds, microseconds = key_frame_seconds.split(".")
+#             time = datetime.timedelta(seconds=float(seconds), microseconds=float(microseconds) - 1)
+#             key_frame_times.append(time)
+#         print(key_frame_times)
+#         last_key_frame_time = [time for time in key_frame_times if beginning_time.total_seconds() - time.total_seconds() > 0][-1]
+#         if last_key_frame_time.total_seconds() <= 0:
+#             last_key_frame_time = last_key_frame_time.resolution
+#         return last_key_frame_time
 
-    async def fix_times(self, beginning_time, end_time, filename):
-        # Fix beginning time below zero
-        if beginning_time.total_seconds() <= 0:
-            beginning_time = beginning_time.resolution
+#     async def fix_times(self, beginning_time, end_time, filename):
+#         # Fix beginning time below zero
+#         if beginning_time.total_seconds() <= 0:
+#             beginning_time = beginning_time.resolution
 
-        # Fix end time after end
-        video_length_cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {filename}"
-        video_lengths = subprocess.check_output(video_length_cmd, shell=True).decode().split('.')
-        video_length = datetime.timedelta(seconds=float(video_lengths[0]), microseconds=float(video_lengths[1]))
-        if video_length.total_seconds() - end_time.total_seconds() <= 1:
-            end_time = video_length
+#         # Fix end time after end
+#         video_length_cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {filename}"
+#         video_lengths = subprocess.check_output(video_length_cmd, shell=True).decode().split('.')
+#         video_length = datetime.timedelta(seconds=float(video_lengths[0]), microseconds=float(video_lengths[1]))
+#         if video_length.total_seconds() - end_time.total_seconds() <= 1:
+#             end_time = video_length
 
-        return beginning_time, end_time
+#         return beginning_time, end_time
 
-    async def create_video(self, filename, beginning_time, end_time):
-        path = "data/video/"
-        await self.fix_times(beginning_time, end_time, path + filename)
-        # previous_key_frame_time = await self.get_nearest_key_frame_time(filename, beginning_time)
-        previous_key_frame_time = beginning_time
-        start = "0" + str(previous_key_frame_time)[0:14]
-        print(start)
-        end_time = end_time - previous_key_frame_time
-        print(end_time)
-        end = "0" + str(end_time)[0:7]
-        # cmd = f"ffmpeg -avoid_negative_ts 1 -i {path + filename} -ss {start} -to {end} -c copy {path}result_{filename[:-3] + 'mp4'}"
-        cmd = f"ffmpeg -ss {start} -i {path + filename} -to {end} -c copy -avoid_negative_ts make_zero {path}result_{filename[:-3] + 'mp4'}"
-        os.system(cmd)
+#     async def create_video(self, filename, beginning_time, end_time):
+#         path = "data/video/"
+#         await self.fix_times(beginning_time, end_time, path + filename)
+#         # previous_key_frame_time = await self.get_nearest_key_frame_time(filename, beginning_time)
+#         previous_key_frame_time = beginning_time
+#         start = "0" + str(previous_key_frame_time)[0:14]
+#         print(start)
+#         end_time = end_time - previous_key_frame_time
+#         print(end_time)
+#         end = "0" + str(end_time)[0:7]
+#         # cmd = f"ffmpeg -avoid_negative_ts 1 -i {path + filename} -ss {start} -to {end} -c copy {path}result_{filename[:-3] + 'mp4'}"
+#         cmd = f"ffmpeg -ss {start} -i {path + filename} -to {end} -c copy -avoid_negative_ts make_zero {path}result_{filename[:-3] + 'mp4'}"
+#         os.system(cmd)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -220,7 +220,6 @@ class MediaCog(commands.Cog):
     #         else:
     #             b += 1
                 
-    
     @app_commands.command(name="request", description="Searches for Japanese sentence examples in VN/LN/ANIME.")
     @app_commands.choices(media = [Choice(name="Visual Novels", value="Visual Novels"), Choice(name="Light Novels", value="Light Novels"), Choice(name="Anime", value="Anime")])
     async def request(self, interaction: discord.Interaction, media: str, japanese_input: str):
