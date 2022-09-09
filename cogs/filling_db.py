@@ -4,6 +4,7 @@ import sqlite3
 import json
 import re
 import datetime
+from discord import app_commands
 
 with open("cogs/jsons/settings.json") as json_file:
     data_dict = json.load(json_file)
@@ -15,7 +16,7 @@ with open("cogs/jsons/settings.json") as json_file:
 
 class Filling_db(commands.Cog):
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
@@ -78,13 +79,13 @@ class Filling_db(commands.Cog):
 
         return displayed_keywords
 
-    async def fetch_messages(self, fetch_channel):
+    async def fetch_messages(self, channel):
         log = datetime.datetime.today()
         log = log.strftime("%Y/%m/%d %H:%M:%S")
-        print(f'{log} Fetching {fetch_channel}')
+        print(f'{log} Fetching {channel}')
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
-        channel = await self.bot.fetch_channel(int(fetch_channel))
+        channel = await self.bot.fetch_channel(int(channel.id))
         async for reaction_message in channel.history(limit=int(history_limit)):
             for reaction in reaction_message.reactions:
                 if reaction.emoji == "🔖":
@@ -106,7 +107,8 @@ class Filling_db(commands.Cog):
                             cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)', (int(reaction_message.author.id), int(reaction_amount), int(reaction_message.id), "\n" + str(reaction_message.content), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message_image), str(displayed_keywords)))
                             con.commit()
                         elif len(reaction_message.content) > max_char:
-                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)',(int(reaction_message.author.id), int(reaction.count), int(reaction_message.id), "\n" + str(reaction_message.content[:max_char]), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message.attachments), str(displayed_keywords)))
+                            reaction_message_content = reaction_message.content[:max_char]
+                            cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)',(int(reaction_message.author.id), int(reaction.count), int(reaction_message.id), "\n" + str(reaction_message_content), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message.attachments), str(displayed_keywords)))
                             con.commit()
                         else:
                             cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)', (int(reaction_message.author.id), int(reaction_amount), int(reaction_message.id), "\n" + str(reaction_message.content), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message_image), str(displayed_keywords)))
@@ -114,22 +116,11 @@ class Filling_db(commands.Cog):
         con.close()
         print("done fetching")
         
-    @commands.command(hidden=True)
-    @commands.has_any_role("Moderator", "Administrator")
-    async def fill_db(self, ctx, channel_name):
-        all_text_channels = []
-        for server in self.bot.guilds:
-            for channel in server.channels:
-                if str(channel.type) == 'text':
-                    id = channel.id
-                    all_text_channels.append(id)
-        text_channels = (['<#{0}>'.format(i) for i in all_text_channels])
-        try:
-            if any(channel_name in s for s in text_channels):
-                fetch_channel = channel_name.strip("<#>")
-                await self.fetch_messages(fetch_channel)
-        except:
-            exit
-
-def setup(bot):
-    bot.add_cog(Filling_db(bot))
+    @app_commands.command(name="fill_db", description="Fills the db with the messages of the specified channel.")
+    @app_commands.checks.has_role("Moderator")
+    async def fill_db(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        await interaction.response.send_message(f'Fetching {channel}...', ephemeral=True)
+        await self.fetch_messages(channel)
+        
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Filling_db(bot), guilds=[discord.Object(id=guild_id)])

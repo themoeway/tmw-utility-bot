@@ -142,5 +142,5 @@ class reaction_add(commands.Cog):
                     await asyncio.sleep(0.25)
                     await self.update_db(payload)
 
-def setup(bot):
-    bot.add_cog(reaction_add(bot))
+async def setup(bot):
+    await bot.add_cog(reaction_add(bot))

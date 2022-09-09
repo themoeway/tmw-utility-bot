@@ -5,6 +5,7 @@ import datetime
 from datetime import timedelta
 import pytz
 import re
+from discord import app_commands
 import json
 
 with open("cogs/jsons/settings.json") as json_file:
@@ -26,14 +27,14 @@ class Category(commands.Cog):
     async def on_ready(self):
         self.myguild = self.bot.get_guild(guild_id)
     
-    @commands.command()
-    @commands.cooldown(3, 86400, commands.BucketType.user)
-    async def categories(self, ctx):
-        """
-        Lists available keywords to search for
-        """
-        await ctx.message.author.send(file=discord.File(r'catergories.txt'))
-        
+    @app_commands.command(name="possible_keywords", description="A list of possible keywords to search for.")  
+    @app_commands.checks.cooldown(5, 86400, key=lambda i: (i.guild_id, i.user.id))
+    async def possible_keywords(self, interaction: discord.Interaction):
+        try:
+            await interaction.user.send(file=discord.File(r'categories.txt'))
+        except Exception:
+            await interaction.channel.send(f'<@{interaction.user.id}> please change your privacy settings to ``Allow direct messages from server members.``')
+    
     async def create_message(self, command_user, keyword):
         log = datetime.datetime.today()
         log = log.strftime("%Y/%m/%d %H:%M:%S")
@@ -109,16 +110,13 @@ class Category(commands.Cog):
                 count += 1
         await command_user.send("Done!!!")
     
-    @commands.command()      
-    @commands.cooldown(10, 86400, commands.BucketType.user)    
-    async def category(self, ctx, keyword):
-        """
-        Outputs a list with the specified keyword
-        """
+    @app_commands.command(name="keywords_list", description="Outputs a list of the specified keyword.")  
+    @app_commands.checks.cooldown(5, 86400, key=lambda i: (i.guild_id, i.user.id))
+    async def keywords_list(self, interaction: discord.Interaction, keyword: str):
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
         cur.execute(f"SELECT discord_user_id, keywords FROM bookmarked_messages")
-        command_user = await self.bot.fetch_user(ctx.message.author.id)
+        command_user = interaction.user
         embed_messages = cur.fetchall()
         categories = []
         for id, keywords in embed_messages:
@@ -130,13 +128,12 @@ class Category(commands.Cog):
                 try:
                     await command_user.send("Preparing list...")
                 except Exception:
-                    await ctx.send(f'<@{command_user.id}> please change your privacy settings to ``Allow direct messages from server members.``')
+                    await interaction.channel.send(f'<@{command_user.id}> please change your privacy settings to ``Allow direct messages from server members.``')
                 else:
                     return await self.create_message(command_user, keyword)
                 break
         else:
             return await command_user.send(f"There is no {keyword} message.")
-        
-        
-def setup(bot):
-    bot.add_cog(Category(bot))
+                
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Category(bot), guilds=[discord.Object(id=guild_id)])

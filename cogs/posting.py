@@ -9,6 +9,7 @@ import asyncio
 from collections import Counter
 import json
 import re
+from discord import app_commands
 
 #############################################################
 
@@ -32,10 +33,9 @@ with open("cogs/jsons/content.json") as content_file:
     
 #############################################################
 
-
 class Posting(commands.Cog):
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
@@ -44,7 +44,7 @@ class Posting(commands.Cog):
         # self.log_channel = discord.utils.get(self.myguild.channels, name="bookmark-list")
         # self.log_channel_id = self.log_channel.id
 
-    async def delete(self, ctx, channel):
+    async def delete(self, channel):
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
         cur.execute(f"SELECT * FROM bookmarked_messages")
@@ -52,26 +52,26 @@ class Posting(commands.Cog):
         limit = len(info)+4
         await channel.purge(limit=limit)
 
-    async def recursion(self, ctx, channel):
+    async def recursion(self, channel):
         log = datetime.datetime.today()
         log = log.strftime("%Y/%m/%d %H:%M:%S")
         print(f'{log} Waiting for list deletion')
         await asyncio.sleep(wait_time)
-        await self.delete(ctx, channel)
-        await self.create_message(ctx, channel)
+        await self.delete(channel)
+        await self.create_message(channel)
     
-    async def create_message(self, ctx, channel):
+    async def create_message(self, channel):
         log = datetime.datetime.today()
         log = log.strftime("%Y/%m/%d %H:%M:%S")
         print(f'{log} Wating for list output')
-        await asyncio.sleep(15)
+        await asyncio.sleep(5)
         utc = pytz.UTC
         startw0 = datetime.datetime.today()
         endw1 = startw0 - timedelta(int(look_back_days))
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
-        cur.execute(f"SELECT * FROM bookmarked_messages WHERE bookmarks=17")
-        #cur.execute(f"SELECT * FROM bookmarked_messages ORDER BY bookmarks DESC")
+        #cur.execute(f"SELECT * FROM bookmarked_messages WHERE bookmarks=17")
+        cur.execute(f"SELECT * FROM bookmarked_messages ORDER BY bookmarks DESC")
         info = cur.fetchall()
 
         count = 1
@@ -82,10 +82,7 @@ class Posting(commands.Cog):
                 else:
                     keywords = re.sub("\[\'|\'\]|'|  |,", "", keywords)
                     keywords = keywords.replace(" ", " | ")
-                print(create_date)
                 create_date = datetime.datetime.strptime(create_date, "%Y-%m-%d %H:%M:%S.%f%z")
-                print(create_date)
-                print(utc.localize(startw0))
                 if create_date < utc.localize(startw0) and create_date > utc.localize(endw1):
                     print("red")
                     create_date = create_date.strftime("%b %d %Y")
@@ -143,7 +140,7 @@ class Posting(commands.Cog):
                             count += 1
 
         await self.keyword_assignment()
-        await self.changelog(ctx, channel)
+        await self.changelog(channel)
         
     async def keyword_assignment(self):
         con = sqlite3.connect('bookmarked-messages.db')
@@ -184,7 +181,7 @@ class Posting(commands.Cog):
         
         return list_date, list_del_time
     
-    async def create_embed(self, ctx):
+    async def create_embed(self):
         date = datetime.datetime.today()
         date = date.strftime("%b %d %Y")
         channel = await self.bot.fetch_channel(int(output_channel_id))
@@ -199,18 +196,16 @@ class Posting(commands.Cog):
 
         return info_embed
     
-    async def changelog(self, ctx, channel):
-        info_embed = await self.create_embed(ctx)
+    async def changelog(self, channel):
+        info_embed = await self.create_embed()
         await channel.send(embed=info_embed)
-        await self.recursion(ctx, channel)
+        await self.recursion(channel)
 
-    @commands.command(hidden=True)
-    @commands.has_any_role("Moderator", "Administrator")
-    async def start(self, ctx, channel):
-        channel_id = channel.strip("<#>")
-        channel = await self.bot.fetch_channel(int(channel_id))
-        await self.create_message(ctx, channel)
-
+    @app_commands.command(name="start_list", description="Starts outputting the list from the db.")
+    @app_commands.checks.has_role("Moderator")
+    async def start_list(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        await interaction.response.send_message(f'Posting in {channel}...', ephemeral=True)
+        await self.create_message(channel)
         
-def setup(bot):
-    bot.add_cog(Posting(bot))
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Posting(bot), guilds=[discord.Object(id=guild_id)])
