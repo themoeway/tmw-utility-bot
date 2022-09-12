@@ -33,26 +33,26 @@ class MediaCog(commands.Cog):
         self.s3_client = boto3.client('s3')
         self.subtitle_data = list()
         
-    @app_commands.command(name="create_sub_data", description="Creates anime subtitle data.")    
-    @app_commands.checks.has_role("Moderator") 
-    async def create_sub_data(self, interaction: discord.Interaction):  
-        subtitle_files = [subtitle for subtitle in os.listdir('data/subs/') if subtitle.endswith('.srt')]
-        for counter, subtitle_name in enumerate(subtitle_files):
-            with open(fr'data/subs/{subtitle_name}', encoding='utf-8') as subtitle_file:
-                subtitle_text = subtitle_file.read()
-                try:
-                    subtitle_generator = srt.parse(subtitle_text)
-                    search_pairs = [(subtitle.index, subtitle.content) for subtitle in subtitle_generator]
-                except srt.SRTParseError:
-                    print(f"Subtitle excluded due to error: {subtitle_name}")
-                    continue
-                self.subtitle_data.append((f'{subtitle_name}', search_pairs))
-                print(f"Loaded {counter + 1} out of {len(subtitle_files)} subtitles. ({round(counter/ len(subtitle_files), 4) * 100}%)")
+#     @app_commands.command(name="create_sub_data", description="Creates anime subtitle data.")    
+#     @app_commands.checks.has_role("Moderator") 
+#     async def create_sub_data(self, interaction: discord.Interaction):  
+#         subtitle_files = [subtitle for subtitle in os.listdir('data/subs/') if subtitle.endswith('.srt')]
+#         for counter, subtitle_name in enumerate(subtitle_files):
+#             with open(fr'data/subs/{subtitle_name}', encoding='utf-8') as subtitle_file:
+#                 subtitle_text = subtitle_file.read()
+#                 try:
+#                     subtitle_generator = srt.parse(subtitle_text)
+#                     search_pairs = [(subtitle.index, subtitle.content) for subtitle in subtitle_generator]
+#                 except srt.SRTParseError:
+#                     print(f"Subtitle excluded due to error: {subtitle_name}")
+#                     continue
+#                 self.subtitle_data.append((f'{subtitle_name}', search_pairs))
+#                 print(f"Loaded {counter + 1} out of {len(subtitle_files)} subtitles. ({round(counter/ len(subtitle_files), 4) * 100}%)")
 
-        with open("data/subs/subs_data", "wb") as subsdata:
-            pickle.dump(self.subtitle_data, subsdata)
+#         with open("data/subs/subs_data", "wb") as subsdata:
+#             pickle.dump(self.subtitle_data, subsdata)
 
-        await interaction.channel.send("Done.")
+#         await interaction.channel.send("Done.")
         
 #     async def get_sub_timings(self, subtitle_name, subtitle_index):
 #         with open(fr'data/subs/{subtitle_name}', encoding='utf-8') as subtitle_file:
@@ -136,9 +136,9 @@ class MediaCog(commands.Cog):
 
         print(f"Loaded subtitle data with {len(self.subtitle_data)} files.")
 
-    async def download_file(self, filename):
-        return (f"data/video/{filename}")
-        #self.s3_client.download_file("djtvideoarchive", f"{filename}", f"data/video/{filename}")
+#     async def download_file(self, filename):
+#         return (f"data/video/{filename}")
+#         self.s3_client.download_file("djtvideoarchive", f"{filename}", f"data/video/{filename}")
     
     async def vinnies_db(self, file):
         con = sqlite3.connect('vinnies.db')
