@@ -377,6 +377,15 @@ class MediaCog(commands.Cog):
 
             video_file = discord.File(f"data/video/result_{video_file_name[:-3] + 'mp4'}")
             await interaction.channel.send(embed=resultembed, file=video_file)
+           
+        elif media == "All media":
+            file = relevant_result[1]
+            file = file[3:]
+            ln_series, link, image = await self.all_media(file)
+            resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {ln_series[:-4].upper()}",description=f'{link}')
+            resultembed.set_thumbnail(url=image)
+            resultembed.add_field(name="Text:", value=f'{relevant_result[2]}', inline=False)    
+            await interaction.channel.send(embed=resultembed)
             
         elif media == "Visual Novels":
             file = relevant_result[1]
