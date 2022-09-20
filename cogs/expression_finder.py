@@ -226,10 +226,24 @@ class MediaCog(commands.Cog):
         if interaction.channel_id != allowed_channels:
             await interaction.response.send_message(f'Please use this command in <#{allowed_channels}>' , ephemeral=True)
             return
-
+        
         await interaction.response.send_message(f'Searching for {japanese_input} in {media}:')
+        
         results = []
         foundindex = 0
+        if media == "All media":
+            files = [file for file in os.listdir("data/") if file.endswith(".txt")]
+            for file in files:
+                script = open(fr"data/{file}", "r", encoding="utf-8")
+                for count, text in enumerate(script):
+                    if japanese_input not in text:
+                        continue
+
+                    foundindex += 1
+                    result = (foundindex, file, text)
+                    results.append(result)
+
+
         if media == "Visual Novels":
             vn_files = [vn for vn in os.listdir("data/vns/") if vn.endswith(".txt")]
             for counter, vn_name in enumerate(vn_files):
