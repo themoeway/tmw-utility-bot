@@ -381,32 +381,62 @@ class MediaCog(commands.Cog):
         elif media == "All media":
             file = relevant_result[1]
             file = file[3:]
-            ln_series, link, image = await self.all_media(file)
-            resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {ln_series[:-4].upper()}",description=f'{link}')
+            vn_series, link, image = await self.vinnies_db(file)
+            resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {vn_series[:-4].upper()}",description=f'{link}')
             resultembed.set_thumbnail(url=image)
-            resultembed.add_field(name="Text:", value=f'{relevant_result[2]}', inline=False)    
-            await interaction.channel.send(embed=resultembed)
+            if len(relevant_result) == 3:
+                resultembed.add_field(name="Text:", value=f'||{relevant_result[3]}||{relevant_result[2]}||{relevant_result[4]}||', inline=False)
+                await interaction.channel.send(embed=resultembed)
+            elif len(relevant_result) >= 4:
+                try:
+                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}||{relevant_result[5]}||', inline=False)
+                    await interaction.channel.send(embed=resultembed)
+                except Exception:
+                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)   
+                    await interaction.channel.send(embed=resultembed)
+            elif len(relevant_result) == 2:
+                resultembed.add_field(name="Text:", value=f'{relevant_result[2]}||{relevant_result[3]}||', inline=False)
+                await interaction.channel.send(embed=resultembed)
             
         elif media == "Visual Novels":
             file = relevant_result[1]
+            file = file[3:]
             vn_series, link, image = await self.vinnies_db(file)
             resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {vn_series[:-4].upper()}",description=f'{link}')
-            resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)
             resultembed.set_thumbnail(url=image)
-            # if file == "muramasa.txt":
-            #     sentence = relevant_result[2]
-            #     sentence = sentence[1:]
-            #     src_path = await self.get_nss_files(sentence)
-            #     print(src_path)
-            #     if src_path != None:
-            #         audio_file = discord.File(fr"muramasa/{src_path[0] + '.ogg.'}")
-            #         await interaction.channel.send(embed=resultembed, file=audio_file)
-            #     else:
-            #         await interaction.channel.send(embed=resultembed)
-            # else:
-            #     await interaction.channel.send(embed=resultembed)
-            await interaction.channel.send(embed=resultembed)
-
+            if len(relevant_result) == 3:
+                resultembed.add_field(name="Text:", value=f'||{relevant_result[3]}||{relevant_result[2]}||{relevant_result[4]}||', inline=False)
+                await interaction.channel.send(embed=resultembed)
+            elif len(relevant_result) >= 4:
+                try:
+                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}||{relevant_result[5]}||', inline=False)
+                    await interaction.channel.send(embed=resultembed)
+                except Exception:
+                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)   
+                    await interaction.channel.send(embed=resultembed)
+            elif len(relevant_result) == 2:
+                resultembed.add_field(name="Text:", value=f'{relevant_result[2]}||{relevant_result[3]}||', inline=False)
+                await interaction.channel.send(embed=resultembed)
+        
+        elif media =="Light Novels":
+            file = relevant_result[1]
+            file = file[3:]
+            vn_series, link, image = await self.vinnies_db(file)
+            resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {vn_series[:-4].upper()}",description=f'{link}')
+            resultembed.set_thumbnail(url=image)
+            if len(relevant_result) == 3:
+                resultembed.add_field(name="Text:", value=f'||{relevant_result[3]}||{relevant_result[2]}||{relevant_result[4]}||', inline=False)
+                await interaction.channel.send(embed=resultembed)
+            elif len(relevant_result) >= 4:
+                try:
+                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}||{relevant_result[5]}||', inline=False)
+                    await interaction.channel.send(embed=resultembed)
+                except Exception:
+                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)   
+                    await interaction.channel.send(embed=resultembed)
+            elif len(relevant_result) == 2:
+                resultembed.add_field(name="Text:", value=f'{relevant_result[2]}||{relevant_result[3]}||', inline=False)
+                await interaction.channel.send(embed=resultembed)
         #await asyncio.sleep(1)
 
         # for file in os.listdir('data/video/'):
