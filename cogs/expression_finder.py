@@ -231,38 +231,129 @@ class MediaCog(commands.Cog):
         
         results = []
         foundindex = 0
+        b = 0   
         if media == "All media":
             files = [file for file in os.listdir("data/") if file.endswith(".txt")]
             for file in files:
                 script = open(fr"data/{file}", "r", encoding="utf-8")
-                for count, text in enumerate(script):
-                    if japanese_input not in text:
-                        continue
-
-                    foundindex += 1
-                    result = (foundindex, file, text)
-                    results.append(result)
-
-
-        if media == "Visual Novels":
-            vn_files = [vn for vn in os.listdir("data/vns/") if vn.endswith(".txt")]
-            for counter, vn_name in enumerate(vn_files):
-                vn_file = open(fr"data/vns/{vn_name}", "r", encoding="utf-8")
                 prev_sentences = []
-                for count, content in enumerate(vn_file):
-                    if japanese_input not in content:
-                        prev_sentences.append((count, content))
-                        continue
-                    
-                    foundindex += 1
-                    count = count - 1
-                    prev_sentence = "".join([x for x in prev_sentences[count][1]])
-                    count = count - 1
-                    prev_sentence2 = "".join([x for x in prev_sentences[count][1]])
-                    results.append((foundindex, vn_name, content, prev_sentence, prev_sentence2))                 
+                for count, text in enumerate(script):
+                    if b == 1:
+                        prev_sentences.append((count, text))
+                        count = count - 1
+                        ctx_sentence = prev_sentences[count][1]
+                        index = len(results) - 1
+                        results[index] = results[index] + (ctx_sentence,)
+                        b = 0
+                    if japanese_input in text:
+                        if len(prev_sentences) == 0:
+                            foundindex += 1
+                            result = (foundindex, file, text)
+                            results.append(result)
+                            b = 1
+                        elif len(prev_sentences) == 1:
+                            foundindex += 1
+                            count = count - 1
+                            ctx_sentence = prev_sentences[count][1]
+                            print(prev_sentences[count])
+                            result = (foundindex, file, text, ctx_sentence)
+                            results.append(result)
+                            b = 1
+                        elif len(prev_sentences) > 1:
+                            foundindex += 1
+                            count = count - 1
+                            ctx_sentence = prev_sentences[count][1]
+                            count = count - 1
+                            ctx_sentence2 = prev_sentences[count][1]
+                            result = (foundindex, file, text, ctx_sentence, ctx_sentence2)
+                            results.append(result)
+                            b = 1
+                    else:
+                        prev_sentences.append((count, text))
+                        continue         
+                count = 0
+        
+        if media == "Visual Novels":
+            files = [file for file in os.listdir("data/") if file.endswith(".txt") and file.startswith("vn")]
+            for file in files:
+                script = open(fr"data/{file}", "r", encoding="utf-8")
+                prev_sentences = []
+                for count, text in enumerate(script):
+                    if b == 1:
+                        prev_sentences.append((count, text))
+                        count = count - 1
+                        ctx_sentence = prev_sentences[count][1]
+                        index = len(results) - 1
+                        results[index] = results[index] + (ctx_sentence,)
+                        b = 0
+                    if japanese_input in text:
+                        if len(prev_sentences) == 0:
+                            foundindex += 1
+                            result = (foundindex, file, text)
+                            results.append(result)
+                            b = 1
+                        elif len(prev_sentences) == 1:
+                            foundindex += 1
+                            count = count - 1
+                            ctx_sentence = prev_sentences[count][1]
+                            print(prev_sentences[count])
+                            result = (foundindex, file, text, ctx_sentence)
+                            results.append(result)
+                            b = 1
+                        elif len(prev_sentences) > 1:
+                            foundindex += 1
+                            count = count - 1
+                            ctx_sentence = prev_sentences[count][1]
+                            count = count - 1
+                            ctx_sentence2 = prev_sentences[count][1]
+                            result = (foundindex, file, text, ctx_sentence, ctx_sentence2)
+                            results.append(result)
+                            b = 1
+                    else:
+                        prev_sentences.append((count, text))
+                        continue         
+                count = 0    
 
         elif media == "Light Novels":
-            await interaction.response.send_message("This option is not available yet.", ephemeral=True)
+            files = [file for file in os.listdir("data/") if file.endswith(".txt") and file.startswith("ln")]
+            for file in files:
+                script = open(fr"data/{file}", "r", encoding="utf-8")
+                prev_sentences = []
+                for count, text in enumerate(script):
+                    if b == 1:
+                        prev_sentences.append((count, text))
+                        count = count - 1
+                        ctx_sentence = prev_sentences[count][1]
+                        index = len(results) - 1
+                        results[index] = results[index] + (ctx_sentence,)
+                        b = 0
+                    if japanese_input in text:
+                        if len(prev_sentences) == 0:
+                            foundindex += 1
+                            result = (foundindex, file, text)
+                            results.append(result)
+                            b = 1
+                        elif len(prev_sentences) == 1:
+                            foundindex += 1
+                            count = count - 1
+                            ctx_sentence = prev_sentences[count][1]
+                            print(prev_sentences[count])
+                            result = (foundindex, file, text, ctx_sentence)
+                            results.append(result)
+                            b = 1
+                        elif len(prev_sentences) > 1:
+                            foundindex += 1
+                            count = count - 1
+                            ctx_sentence = prev_sentences[count][1]
+                            count = count - 1
+                            ctx_sentence2 = prev_sentences[count][1]
+                            result = (foundindex, file, text, ctx_sentence, ctx_sentence2)
+                            results.append(result)
+                            b = 1
+                    else:
+                        prev_sentences.append((count, text))
+                        continue         
+                count = 0
         
         elif media == "Anime":
             await interaction.response.send_message("This option is not available yet.", ephemeral=True)
