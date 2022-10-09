@@ -10,6 +10,8 @@ import re
 import json
 import datetime
 
+from bookmark import Bookmark
+
 #############################################################
 
 with open("cogs/jsons/settings.json") as json_file:
@@ -45,6 +47,7 @@ class reaction_add(commands.Cog):
             for reaction in reaction_message.reactions:
                 if reaction.emoji == '🔖':
                     print(f'{log} {reaction_message.jump_url} has 🔖')
+                    await Bookmark.dm_bookmark(self, payload)
                     if reaction.count >= amount:
                         print(f'{log} {reaction_message.jump_url} has {reaction.count}')
                         return reaction.count
