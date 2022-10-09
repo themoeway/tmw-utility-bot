@@ -51,16 +51,17 @@ class Extras(commands.Cog):
         
     @app_commands.command(name="rankuser", description="See all users with a specific role.")
     async def rankuser(self, interaction: discord.Interaction, role: discord.Role):
+        await interaction.response.defer()
         embed = discord.Embed(title=f"Role {role}", description=f"In total {len(role.members)} users have the {role} role.", color=discord.Color.blurple())
         for member in role.members[0:70]:
             embed.add_field(name=f"{member}", value="\u200b")
         if len(role.members) >= 70:
             embed.set_footer(text="... not all results displayed but you can pick any index.\n"
-                                    "Pick an index to retrieve a scene next.")
+                                    "Pick an index to go to the next page.")
         else:
-            embed.set_footer(text="Pick an index to retrieve a scene next.")
+            embed.set_footer(text="Pick an index to go to the next page.")
             
-        results_message = await interaction.channel.send(embed=embed)
+        results_message = await interaction.edit_original_response(embed=embed)
         await results_message.add_reaction('⬅️')
         await results_message.add_reaction('➡️')
         
@@ -159,7 +160,28 @@ class Extras(commands.Cog):
             await interaction.response.send_message("https://docs.google.com/spreadsheets/d/1pHSFB3EH6ARdgHo-l0KAGsprM5Zfcewxxt-eF9Q3Ixo/edit#gid=1333508788")    
         except Exception:
             await interaction.response.send_message("Something went wrong", ephemeral=True)
-            
+    
+    @app_commands.command(name="solved", description="Marks a thread as solved.")
+    async def solved(self, interaction: discord.Interaction):
+        assert isinstance(interaction.channel, discord.Thread)
+        await interaction.response.send_message(f'{interaction.user} closed the thread.')
+        await interaction.channel.edit(locked=True, archived=True, reason=f'Marked as solved by {interaction.user} (ID: {interaction.user.id}')
+    
+    @app_commands.command(name='reset', description='Resets the quiz cooldown for a user.')
+    @app_commands.checks.has_role("Moderator")
+    @app_commands.choices(quizcommand= [Choice(name="Eternal vocab", value="k!quiz jpdb20k+jpdb25k 50 hardcore nd mmq=10 dauq=1 font=5 color=#f173ff size=100 effect=antiocr"), Choice(name="Divine vocab", value="k!quiz jpdb15k+jpdb20k 50 hardcore nd mmq=10 dauq=1 font=5 color=#f173ff size=100 effect=antiocr"), Choice(name="GN1", value="k!quiz gn1 nd 20 mmq=4"), Choice(name="GN2", value="k!quiz gn2 nd 20 mmq=4"), Choice(name="Prima vocab", value="k!quiz jpdb10k+jpdb15k 50 hardcore nd mmq=10 dauq=1 font=5 color=#f173ff size=100 effect=antiocr"), Choice(name="Major Idol", value="k!quiz jpdb5k+jpdb10k 50 hardcore nd mmq=10 dauq=1 font=5 color=#f173ff size=100 effect=antiocr"), Choice(name="Debut Idol", value="k!quiz jpdb2_5k+jpdb5k 50 hardcore nd mmq=10 dauq=1 font=5 color=#f173ff size=100 effect=antiocr"), Choice(name="Trainee", value="k!quiz jpdb1k 50 hardcore nd mmq=10 dauq=1 font=5 color=#f173ff size=100")])
+    async def reset(self, interaction: discord.Interaction, user: discord.Member, quizcommand: str):
+        await interaction.response.defer()
+        user_id = user.id
+        con = sqlite3.connect('/root/book/quiz_attempts.db')
+        cur = con.cursor()
+        query = "DELETE FROM attempts WHERE discord_user_id=? AND quiz_level=?;"
+        data = (int(user_id), str(quizcommand))
+        cur.execute(query, data)
+        con.commit()
+        con.close()
+        await interaction.edit_original_response(content=f'Reset the cooldown for <@{user.id}> on ``{quizcommand}``.')
+    
     @app_commands.command(name="test", description="test.")
     @app_commands.checks.has_role("Moderator")
     async def test(self, interaction: discord.Interaction, emoji: str):
