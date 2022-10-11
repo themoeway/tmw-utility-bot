@@ -182,6 +182,37 @@ class Extras(commands.Cog):
         con.close()
         await interaction.edit_original_response(content=f'Reset the cooldown for <@{user.id}> on ``{quizcommand}``.')
     
+    async def get_unix(self):
+        con = sqlite3.connect('/root/book/quiz_attempts.db')
+        cur = con.cursor()
+        query = "SELECT STRFTIME('%s', DATE('now', '+' || (7 - STRFTIME('%w')) || ' days'));"
+        cur.execute(query)
+        return cur.fetchone()
+        
+    async def get_cooldowns(self, user_id):    
+        con = sqlite3.connect('/root/book/quiz_attempts.db')
+        cur = con.cursor()
+        query = """SELECT * FROM attempts WHERE discord_user_id=? AND created_at >= DATE('now', '-' || STRFTIME('%w') || ' days') """
+        data = (user_id)
+        cur.execute(query, (data,))
+        return cur.fetchall()
+        
+    @app_commands.command(name='cooldowns', description='Shows the quiz cooldowns of a user.')
+    async def cooldowns(self, interaction: discord.Interaction, user: discord.Member):
+        user_id = user.id
+        cooldowns = await self.get_cooldowns(user_id)
+        unixstamp = await self.get_unix()
+        #await interaction.channel.send("\n".join([format + cooldown[1] + format for cooldown in cooldowns]))
+        if cooldowns != []:
+            embed = discord.Embed(title=f'''{user}'s quiz cooldowns''', description=f'The following commands are on cooldown untill <t:{int(unixstamp[0])}:R> at <t:{unixstamp[0]}>.', color=discord.Color.blurple())
+            format = r"``"
+            cooldowns = "\n".join([format + cooldown[1] + format for cooldown in cooldowns])
+            embed.add_field(name='Commands', value=f'{cooldowns}')
+        if cooldowns == []: 
+            embed = discord.Embed(title=f'''{user}'s quiz cooldowns''', description=f'{user} has no commands on cooldown.', color=discord.Color.blurple())
+            embed.add_field(name='Commands', value=f'No cooldowns.')
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
     @app_commands.command(name="test", description="test.")
     @app_commands.checks.has_role("Moderator")
     async def test(self, interaction: discord.Interaction, emoji: str):
