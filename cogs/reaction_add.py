@@ -19,7 +19,7 @@ with open("cogs/jsons/settings.json") as json_file:
     amount = data_dict["amount"]
     guild_id = data_dict["guild_id"]
     output_channel_id = data_dict["bookmark-list"]
-    count = data_dict["max_char"]
+    max_char = data_dict["max_char"]
     
 with open("cogs/jsons/filter.json") as file:
     data = json.load(file)
@@ -133,7 +133,7 @@ class reaction_add(commands.Cog):
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
         cur.execute('INSERT INTO bookmarked_messages (discord_user_id, bookmarks, message_id, content, link, created_at, attachments, keywords) VALUES (?,?,?,?,?,?,?,?)',
-                    (int(reaction_message.author.id), int(reaction.count), int(reaction_message.id), str(reaction_message_content[:count]), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message.attachments), str(displayed_keywords)))
+                    (int(reaction_message.author.id), int(reaction.count), int(reaction_message.id), str(reaction_message_content[:max_char]), str(reaction_message.jump_url), str(reaction_message.created_at), str(reaction_message.attachments), str(displayed_keywords)))
         con.commit()
         con.close()
         log = datetime.datetime.today()
@@ -145,14 +145,12 @@ class reaction_add(commands.Cog):
         reaction_message = await channel.fetch_message(payload.message_id)
         con = sqlite3.connect('bookmarked-messages.db')
         cur = con.cursor()
-        for reaction in reaction_message.reactions:
-            if reaction.count >= amount:
-                count = reaction.count
+        count = max([reaction.count for reaction in reaction_message.reactions])
         displayed_keywords = await self.keyword_assignment(payload)
         reaction_message_content = await self.user_name_removal(payload)
         reaction_message_content = "\n" + str(reaction_message_content)
         update_query = """UPDATE bookmarked_messages SET bookmarks=?, content=?, keywords=? WHERE message_id=?"""
-        cur.execute(update_query, (int(count), "\n" + str(reaction_message_content[:count]), str(displayed_keywords), int(reaction_message.id)))
+        cur.execute(update_query, (int(count), "\n" + str(reaction_message_content[:max_char]), str(displayed_keywords), int(reaction_message.id)))
         con.commit()
         con.close()
         log = datetime.datetime.today()
