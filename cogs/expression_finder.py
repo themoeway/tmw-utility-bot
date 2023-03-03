@@ -27,118 +27,77 @@ with open("cogs/jsons/settings.json") as json_file:
 
 #############################################################
 
+
+class MyView(discord.ui.View):
+    def __init__(self, *, timeout: Optional[float] = 900, data, beginning_index: int, end_index: int, request):
+        super().__init__(timeout=timeout)
+        self.data: list = data
+        self.beginning_index: int = beginning_index
+        self.ending_index: int = end_index
+        self.request = request
+    
+    
+    async def edit_embed(self, data, request, beginning_index, ending_index):
+        myembed = discord.Embed(title=f'{len(data)} results for {request}')
+        for result in data[beginning_index:ending_index]:
+            myembed.add_field(name=f'{result[0]}: {result[1]}',value=f'{result[2]}', inline=False)
+        if len(data) >= 2:
+            myembed.set_footer(text="... not all results displayed but you can pick any index.\n" 
+                                    "Pick an index to retrieve a scene next.")
+        else:
+            myembed.set_footer(text="Pick an index to retrieve a scene next.")
+        return myembed
+        
+        
+    @discord.ui.button(label='≪', style=discord.ButtonStyle.grey, row=1)
+    async def go_to_first_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.beginning_index -= 10
+        self.ending_index -= 10
+        if self.beginning_index >= len(self.data):
+            self.beginning_index = 0
+            self.ending_index = 10
+        myembed = await self.edit_embed(self.data, self.request, self.beginning_index, self.ending_index)
+        await interaction.response.edit_message(embed=myembed)
+        
+        
+    @discord.ui.button(label='Back', style=discord.ButtonStyle.blurple, row=1)
+    async def go_to_previous_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.beginning_index -= 5
+        self.ending_index -= 5
+        myembed = await self.edit_embed(self.data, self.request, self.beginning_index, self.ending_index)
+        await interaction.response.edit_message(embed=myembed)
+    
+    
+    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple, row=1)
+    async def go_to_next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.beginning_index += 5
+        self.ending_index += 5
+        myembed = await self.edit_embed(self.data, self.request, self.beginning_index, self.ending_index)
+        await interaction.response.edit_message(embed=myembed)        
+        
+        
+    @discord.ui.button(label='≫', style=discord.ButtonStyle.grey, row=1)
+    async def go_to_last_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.beginning_index += 10
+        self.ending_index += 10
+        if self.beginning_index >= len(self.data):
+            self.beginning_index -= 10
+            self.ending_index -= 10
+        myembed = await self.edit_embed(self.data, self.request, self.beginning_index, self.ending_index)
+        await interaction.response.edit_message(embed=myembed)
+        
+        
+    @discord.ui.button(label='Quit', style=discord.ButtonStyle.red, row=1)
+    async def stop_pages(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.message.delete()
+        
 class MediaCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.s3_client = boto3.client('s3')
-        self.subtitle_data = list()
         
-#     @app_commands.command(name="create_sub_data", description="Creates anime subtitle data.")    
-#     @app_commands.checks.has_role("Moderator") 
-#     async def create_sub_data(self, interaction: discord.Interaction):  
-#         subtitle_files = [subtitle for subtitle in os.listdir('data/subs/') if subtitle.endswith('.srt')]
-#         for counter, subtitle_name in enumerate(subtitle_files):
-#             with open(fr'data/subs/{subtitle_name}', encoding='utf-8') as subtitle_file:
-#                 subtitle_text = subtitle_file.read()
-#                 try:
-#                     subtitle_generator = srt.parse(subtitle_text)
-#                     search_pairs = [(subtitle.index, subtitle.content) for subtitle in subtitle_generator]
-#                 except srt.SRTParseError:
-#                     print(f"Subtitle excluded due to error: {subtitle_name}")
-#                     continue
-#                 self.subtitle_data.append((f'{subtitle_name}', search_pairs))
-#                 print(f"Loaded {counter + 1} out of {len(subtitle_files)} subtitles. ({round(counter/ len(subtitle_files), 4) * 100}%)")
-
-#         with open("data/subs/subs_data", "wb") as subsdata:
-#             pickle.dump(self.subtitle_data, subsdata)
-
-#         await interaction.channel.send("Done.")
-        
-#     async def get_sub_timings(self, subtitle_name, subtitle_index):
-#         with open(fr'data/subs/{subtitle_name}', encoding='utf-8') as subtitle_file:
-#             subtitle_text = subtitle_file.read()
-#             subtitle_generator = srt.parse(subtitle_text)
-#             all_subtitles = list(subtitle_generator)
-#             indexes_to_extract = list(range(subtitle_index-2, subtitle_index+3))
-#             subtitle_lines = [subtitle for subtitle in all_subtitles if subtitle.index in indexes_to_extract]
-#             content = " 　".join([subtitle.content for subtitle in subtitle_lines])
-#             if len(subtitle_lines) >= 5:
-#                 beginning_time = subtitle_lines[1].start
-#             else:
-#                 beginning_time = subtitle_lines[0].start - datetime.timedelta(seconds=5)
-#             end_time = subtitle_lines[-1].end + datetime.timedelta(seconds=4)
-#             return content, beginning_time, end_time
-
-#     async def edit_results_post(self, results, results_msg, beginning_index, end_index, japanese_input):
-#         myembed = discord.Embed(title=f"{len(results)} results for {japanese_input}")
-#         for result in results[beginning_index:end_index]:
-#             myembed.add_field(name=f"{result[0]} in {result[1]}", value=f"{result[2]}", inline=False)
-#         if len(results) >= 5:
-#             myembed.set_footer(text="... not all results displayed but you can pick any index.\n"
-#                                     "Pick an index to retrieve a scene next.")
-#         else:
-#             myembed.set_footer(text="Pick an index to retrieve a scene next.")
-
-#         await results_msg.edit(embed=myembed)
-
-#     async def get_nearest_key_frame_time(self, filename, beginning_time):
-#         path = "data/video/"
-#         print(filename, beginning_time, path)
-#         cmd = f"ffprobe -v error -skip_frame nokey -show_entries frame=pkt_pts_time -select_streams v -of csv=p=0 {path + filename}"
-#         print(cmd)
-#         key_frames = subprocess.check_output(cmd, shell=True).decode().split()
-#         print(key_frames)
-#         print("We have the following key frames: ", key_frames)
-#         key_frame_times = []
-#         for key_frame_seconds in key_frames:
-#             print(key_frame_seconds)
-#             seconds, microseconds = key_frame_seconds.split(".")
-#             time = datetime.timedelta(seconds=float(seconds), microseconds=float(microseconds) - 1)
-#             key_frame_times.append(time)
-#         print(key_frame_times)
-#         last_key_frame_time = [time for time in key_frame_times if beginning_time.total_seconds() - time.total_seconds() > 0][-1]
-#         if last_key_frame_time.total_seconds() <= 0:
-#             last_key_frame_time = last_key_frame_time.resolution
-#         return last_key_frame_time
-
-#     async def fix_times(self, beginning_time, end_time, filename):
-#         # Fix beginning time below zero
-#         if beginning_time.total_seconds() <= 0:
-#             beginning_time = beginning_time.resolution
-
-#         # Fix end time after end
-#         video_length_cmd = f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {filename}"
-#         video_lengths = subprocess.check_output(video_length_cmd, shell=True).decode().split('.')
-#         video_length = datetime.timedelta(seconds=float(video_lengths[0]), microseconds=float(video_lengths[1]))
-#         if video_length.total_seconds() - end_time.total_seconds() <= 1:
-#             end_time = video_length
-
-#         return beginning_time, end_time
-
-#     async def create_video(self, filename, beginning_time, end_time):
-#         path = "data/video/"
-#         await self.fix_times(beginning_time, end_time, path + filename)
-#         # previous_key_frame_time = await self.get_nearest_key_frame_time(filename, beginning_time)
-#         previous_key_frame_time = beginning_time
-#         start = "0" + str(previous_key_frame_time)[0:14]
-#         print(start)
-#         end_time = end_time - previous_key_frame_time
-#         print(end_time)
-#         end = "0" + str(end_time)[0:7]
-#         # cmd = f"ffmpeg -avoid_negative_ts 1 -i {path + filename} -ss {start} -to {end} -c copy {path}result_{filename[:-3] + 'mp4'}"
-#         cmd = f"ffmpeg -ss {start} -i {path + filename} -to {end} -c copy -avoid_negative_ts make_zero {path}result_{filename[:-3] + 'mp4'}"
-#         os.system(cmd)
-
     @commands.Cog.listener()
     async def on_ready(self):
-        with open("data/subs/subs_data", "rb") as subsdata:
-            self.subtitle_data = pickle.load(subsdata)
-
-        print(f"Loaded subtitle data with {len(self.subtitle_data)} files.")
-
-#     async def download_file(self, filename):
-#         return (f"data/video/{filename}")
-#         self.s3_client.download_file("djtvideoarchive", f"{filename}", f"data/video/{filename}")
+        print("Loaded expressions finder.")
     
     async def vinnies_db(self, file):
         con = sqlite3.connect('vinnies.db')
@@ -149,86 +108,12 @@ class MediaCog(commands.Cog):
         for (vn_series, link, image) in vn:
             return vn_series, link, image
         
-    # async def get_nss_files(self, sentence):
-    #     file_list = []  
-    #     nss_files = [nss for nss in os.listdir("muramasa/nss/") if nss.endswith(".nss")]
-    #     for counter, nss_name in enumerate(nss_files):
-    #         nss_file = open(fr"muramasa/nss/{nss_name}", "rb")
-    #         for count, line in enumerate(nss_file):
-    #             file_list.append((count, line))  
-    #         nss = []
-    #         for count, script in file_list:
-    #             script = script.decode('shift_jisx0213')
-    #             nss.append((count, script)) 
-    #         src_path = await self.regex_nss_files(nss, sentence)
-    #         if src_path != None:
-    #             return src_path
-                
-    # async def regex_nss_files(self, nss, sentence):
-    #     for count, script in nss:   
-    #         # kanjis = re.findall(">[^>]*<\/R", script)
-    #         kanjis = re.findall("(?<=\>).+?(?=\<)", script)
-    #         if kanjis != []:
-    #             kanji = "〈" + kanjis[0] + "〉"
-    #             furiganas = re.findall('(?<=\=\")([ぁ-んァ-ン])+?(?=\"\>)', script)
-    #             if furiganas != []:
-    #                 furigana = furiganas[0]
-    #                 furigana = "《" + furigana + "》"
-                    
-    #                 pair = kanji + furigana
-                    
-    #                 script = "".join(script.splitlines())
-    #                 #How do i also catch more occurances of the kanji regex, cause this only fixes the first occurance
-    #                 first_match = re.findall("<RUBY text=.*?</RUBY>", script)[0]
-    #                 parts = script.split(first_match)
-    #                 script = f'{parts[0]}{pair}{first_match.join(parts[1:])}'
-    #                 y = list(nss[count])
-    #                 y[1] = "".join(script.splitlines())
-    #                 x = tuple(y)
-    #                 changed_nss = [x if e[0] == x[0] else e for e in nss]  
-    #                 src_path = await self.find_audio(changed_nss, sentence)
-    #                 if src_path != None:
-    #                     return src_path
-                
-    # async def find_audio(self, changed_nss, sentence):
-    #     possible_src_paths = []
-    #     for count, script in changed_nss:
-    #         try:
-    #             if sentence[:15] in script:
-    #                 count = count - 1
-    #                 possible_src_paths.append((changed_nss[count]))
-    #                 count = count - 1
-    #                 possible_src_paths.append((changed_nss[count]))
-    #                 count = count - 1
-    #                 possible_src_paths.append((changed_nss[count]))
-    #                 break 
-    #         except Exception:
-    #             return
-    #     if possible_src_paths != []:
-    #         src_path = await self.get_voice_path(possible_src_paths)
-    #         return src_path
-        
-    # async def get_voice_path(self, possible_src_paths):
-    #     b = 0
-    #     for count, path in possible_src_paths:
-    #         if b == 3:
-    #             print("no voice file")
-    #             break
-    #         if re.findall('src="(.*?)">', path):
-    #             src_path = re.findall('src="(.*?)">', path)
-    #             return src_path
-    #         else:
-    #             b += 1
-                
     @app_commands.command(name="request", description="Searches for Japanese sentence examples in VN/LN/ANIME.")
-    @app_commands.choices(media = [Choice(name="Visual Novels", value="Visual Novels"), Choice(name="Light Novels", value="Light Novels"), Choice(name="Anime", value="Anime")])
-    async def request(self, interaction: discord.Interaction, media: str, japanese_input: str):
-        if interaction.channel_id != allowed_channels:
-            await interaction.response.send_message(f'Please use this command in <#{allowed_channels}>' , ephemeral=True)
+    @app_commands.choices(media = [Choice(name="All media", value="All media")])
+    async def request(self, interaction: discord.Interaction, media: str, expression: str):
+        if not interaction.channel.id == 1020815784353730660:
             return
-        
-        await interaction.response.send_message(f'Searching for {japanese_input} in {media}:')
-        
+        await interaction.response.send_message(f'Searching for {expression} in {media}:')
         results = []
         foundindex = 0
         b = 0   
@@ -272,267 +157,56 @@ class MediaCog(commands.Cog):
                         prev_sentences.append((count, text))
                         continue         
                 count = 0
-        
-        if media == "Visual Novels":
-            files = [file for file in os.listdir("data/") if file.endswith(".txt") and file.startswith("vn")]
-            for file in files:
-                script = open(fr"data/{file}", "r", encoding="utf-8")
-                prev_sentences = []
-                for count, text in enumerate(script):
-                    if b == 1:
-                        prev_sentences.append((count, text))
-                        count = count - 1
-                        ctx_sentence = prev_sentences[count][1]
-                        index = len(results) - 1
-                        results[index] = results[index] + (ctx_sentence,)
-                        b = 0
-                    if japanese_input in text:
-                        if len(prev_sentences) == 0:
-                            foundindex += 1
-                            result = (foundindex, file, text)
-                            results.append(result)
-                            b = 1
-                        elif len(prev_sentences) == 1:
-                            foundindex += 1
-                            count = count - 1
-                            ctx_sentence = prev_sentences[count][1]
-                            print(prev_sentences[count])
-                            result = (foundindex, file, text, ctx_sentence)
-                            results.append(result)
-                            b = 1
-                        elif len(prev_sentences) > 1:
-                            foundindex += 1
-                            count = count - 1
-                            ctx_sentence = prev_sentences[count][1]
-                            count = count - 1
-                            ctx_sentence2 = prev_sentences[count][1]
-                            result = (foundindex, file, text, ctx_sentence, ctx_sentence2)
-                            results.append(result)
-                            b = 1
-                    else:
-                        prev_sentences.append((count, text))
-                        continue         
-                count = 0    
-
-        elif media == "Light Novels":
-            files = [file for file in os.listdir("data/") if file.endswith(".txt") and file.startswith("ln")]
-            for file in files:
-                script = open(fr"data/{file}", "r", encoding="utf-8")
-                prev_sentences = []
-                for count, text in enumerate(script):
-                    if b == 1:
-                        prev_sentences.append((count, text))
-                        count = count - 1
-                        ctx_sentence = prev_sentences[count][1]
-                        index = len(results) - 1
-                        results[index] = results[index] + (ctx_sentence,)
-                        b = 0
-                    if japanese_input in text:
-                        if len(prev_sentences) == 0:
-                            foundindex += 1
-                            result = (foundindex, file, text)
-                            results.append(result)
-                            b = 1
-                        elif len(prev_sentences) == 1:
-                            foundindex += 1
-                            count = count - 1
-                            ctx_sentence = prev_sentences[count][1]
-                            print(prev_sentences[count])
-                            result = (foundindex, file, text, ctx_sentence)
-                            results.append(result)
-                            b = 1
-                        elif len(prev_sentences) > 1:
-                            foundindex += 1
-                            count = count - 1
-                            ctx_sentence = prev_sentences[count][1]
-                            count = count - 1
-                            ctx_sentence2 = prev_sentences[count][1]
-                            result = (foundindex, file, text, ctx_sentence, ctx_sentence2)
-                            results.append(result)
-                            b = 1
-                    else:
-                        prev_sentences.append((count, text))
-                        continue         
-                count = 0
-        
-        elif media == "Anime":
-            await interaction.response.send_message("This option is not available yet.", ephemeral=True)
-            # for filename, subdata in self.subtitle_data:
-            #     for srtindex, content in subdata:
-            #         if japanese_input not in content:
-            #             continue
-
-            #         foundindex += 1
-            #         result = (foundindex, filename, content, srtindex)
-            #         results.append(result)
             
         if len(results) == 0:
             await interaction.channel.send("No results.")
             return
 
-        myembed = discord.Embed(title=f"{len(results)} results for {japanese_input}")
+        myembed = discord.Embed(title=f"{len(results)} results for {expression}")
         for result in results[0:5]:
-            myembed.add_field(name=f"{result[0]} in {result[1]}", value=f"{result[2]}", inline=False)
+            myembed.add_field(name=f'{result[0]}: {result[1]}',value=f'{result[2]}', inline=False)
         if len(results) >= 5:
             myembed.set_footer(text="... not all results displayed but you can pick any index.\n"
                                     "Pick an index to retrieve a scene next.")
         else:
             myembed.set_footer(text="Pick an index to retrieve a scene next.")
             
-        results_message = await interaction.channel.send(embed=myembed)
-        await results_message.add_reaction('1️⃣')
-        await results_message.add_reaction('2️⃣')
-        await results_message.add_reaction('3️⃣')
-        await results_message.add_reaction('4️⃣')
-        await results_message.add_reaction('5️⃣')
-        await results_message.add_reaction('⬅️')
-        await results_message.add_reaction('➡️')
-        #await results_message.add_reaction('❌')
-
-        def reaction_check(reaction, user):
-            allowed_emoji = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '⬅️', '➡️']
-            return user.id == interaction.user.id and str(reaction.emoji) in allowed_emoji and reaction.message.id == results_message.id
-
-        try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=25.0, check=reaction_check)
-            await reaction.remove(user)
-            beginning_index = 0
-            end_index = 5
-            reaction_string = str(reaction.emoji)
-            while reaction_string == "⬅️" or reaction_string == "➡️":
-                if reaction_string == "⬅️":
-                    beginning_index -= 5
-                    end_index -= 5
-                    if beginning_index < 0:
-                        beginning_index = 0
-                        end_index = 5
-                    await self.edit_results_post(results, results_message, beginning_index, end_index, japanese_input)
-                    reaction, user = await self.bot.wait_for('reaction_add', timeout=20.0, check=reaction_check)
-                    await reaction.remove(user)
-                    reaction_string = str(reaction.emoji)
-
-                elif reaction_string == "➡️":
-                    beginning_index += 5
-                    end_index += 5
-                    if beginning_index >= len(results):
-                        beginning_index -= 5
-                        end_index -= 5
-                    await self.edit_results_post(results, results_message, beginning_index, end_index, japanese_input)
-                    reaction, user = await self.bot.wait_for('reaction_add', timeout=20.0, check=reaction_check)
-                    await reaction.remove(user)
-                    reaction_string = str(reaction.emoji)
-
-                else:
-                    await interaction.channel.send("Unexpected error. Exiting...")
-
-        except asyncio.TimeoutError:
-            await interaction.channel.send("Function timed out. Exiting...")
-            return
-
-        if str(reaction.emoji) == "1️⃣":
-            result_index = beginning_index
-        elif str(reaction.emoji) == "2️⃣":
-            result_index = beginning_index + 1
-        elif str(reaction.emoji) == "3️⃣":
-            result_index = beginning_index + 2
-        elif str(reaction.emoji) == "4️⃣":
-            result_index = beginning_index + 3
-        elif str(reaction.emoji) == "5️⃣":
-            result_index = beginning_index + 4
-        elif str(reaction.emoji) == '❌':
-            await interaction.channel.send("Exiting...")
-            return
-        else:
-            await interaction.channel.send("Exiting...")
-            return
-
-        try:
-            relevant_result = results[result_index] # (1, 'aete mushisuru.txt', '\u3000――本日の気温、三十六度。\n')
-        except IndexError:
-            await interaction.channel.send("Invalid index. Exiting...")
-            return
-
-        if media == "Anime:":
-            await interaction.channel.send("Creating video file...")
-
-            content, beginning_time, end_time = await self.get_sub_timings(relevant_result[1], relevant_result[3])
-
-            video_file_name = f"{relevant_result[1][:-3]}mp4"
-
-            from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-            ffmpeg_extract_subclip(fr"{video_file_name}", beginning_time, end_time, targetname="test/test.mp4")
-            # await self.download_file(video_file_name)
-            await self.create_video(video_file_name, beginning_time, end_time)
-
-            stripped_content = content.replace('\n', '　 ')
-
-            video_file = discord.File(f"data/video/result_{video_file_name[:-3] + 'mp4'}")
-            await interaction.channel.send(embed=resultembed, file=video_file)
-           
-        elif media == "All media":
-            file = relevant_result[1]
-            file = file[3:]
-            vn_series, link, image = await self.vinnies_db(file)
-            resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {vn_series[:-4].upper()}",description=f'{link}')
-            resultembed.set_thumbnail(url=image)
-            if len(relevant_result) == 3:
-                resultembed.add_field(name="Text:", value=f'||{relevant_result[3]}||{relevant_result[2]}||{relevant_result[4]}||', inline=False)
-                await interaction.channel.send(embed=resultembed)
-            elif len(relevant_result) >= 4:
-                try:
-                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}||{relevant_result[5]}||', inline=False)
-                    await interaction.channel.send(embed=resultembed)
-                except Exception:
-                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)   
-                    await interaction.channel.send(embed=resultembed)
-            elif len(relevant_result) == 2:
-                resultembed.add_field(name="Text:", value=f'{relevant_result[2]}||{relevant_result[3]}||', inline=False)
-                await interaction.channel.send(embed=resultembed)
-            
-        elif media == "Visual Novels":
-            file = relevant_result[1]
-            file = file[3:]
-            vn_series, link, image = await self.vinnies_db(file)
-            resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {vn_series[:-4].upper()}",description=f'{link}')
-            resultembed.set_thumbnail(url=image)
-            if len(relevant_result) == 3:
-                resultembed.add_field(name="Text:", value=f'||{relevant_result[3]}||{relevant_result[2]}||{relevant_result[4]}||', inline=False)
-                await interaction.channel.send(embed=resultembed)
-            elif len(relevant_result) >= 4:
-                try:
-                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}||{relevant_result[5]}||', inline=False)
-                    await interaction.channel.send(embed=resultembed)
-                except Exception:
-                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)   
-                    await interaction.channel.send(embed=resultembed)
-            elif len(relevant_result) == 2:
-                resultembed.add_field(name="Text:", value=f'{relevant_result[2]}||{relevant_result[3]}||', inline=False)
-                await interaction.channel.send(embed=resultembed)
+        beginning_index = 0
+        end_index = 5
         
-        elif media =="Light Novels":
-            file = relevant_result[1]
-            file = file[3:]
-            vn_series, link, image = await self.vinnies_db(file)
-            resultembed = discord.Embed(title=f"Result {result_index + 1} for {japanese_input} in {vn_series[:-4].upper()}",description=f'{link}')
-            resultembed.set_thumbnail(url=image)
-            if len(relevant_result) == 3:
-                resultembed.add_field(name="Text:", value=f'||{relevant_result[3]}||{relevant_result[2]}||{relevant_result[4]}||', inline=False)
-                await interaction.channel.send(embed=resultembed)
-            elif len(relevant_result) >= 4:
-                try:
-                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}||{relevant_result[5]}||', inline=False)
+        options = []
+        for result in results[0:5]:
+            item = discord.SelectOption(label=f'{result[0]}')
+            options.append(item)
+            
+        select = Select(min_values = 1, max_values = 1, options=options)   
+        async def my_callback(interaction):
+            relevant_result = select.view.data[(int(select.values[0])-1) + int(select.view.beginning_index)]      
+            if media == "All media":
+                file = str(relevant_result[1])
+                vn_series, link, image = await self.vinnies_db(file)
+                resultembed = discord.Embed(title=f"Result for {expression} in {vn_series.upper()}",description=f'{link}')
+                resultembed.set_author(icon_url=interaction.user.avatar.url, name=interaction.user)
+                resultembed.set_thumbnail(url=image)
+                if len(relevant_result) == 3:
+                    resultembed.add_field(name="Text:", value=f'||{relevant_result[3]}||{relevant_result[2]}||{relevant_result[4]}||', inline=False)
                     await interaction.channel.send(embed=resultembed)
-                except Exception:
-                    resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)   
+                elif len(relevant_result) >= 4:
+                    try:
+                        resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}||{relevant_result[5]}||', inline=False)
+                        await interaction.channel.send(embed=resultembed)
+                    except Exception:
+                        resultembed.add_field(name="Text:", value=f'||{relevant_result[4]}{relevant_result[3]}||{relevant_result[2]}', inline=False)   
+                        await interaction.channel.send(embed=resultembed)
+                elif len(relevant_result) == 2:
+                    resultembed.add_field(name="Text:", value=f'{relevant_result[2]}||{relevant_result[3]}||', inline=False)
                     await interaction.channel.send(embed=resultembed)
-            elif len(relevant_result) == 2:
-                resultembed.add_field(name="Text:", value=f'{relevant_result[2]}||{relevant_result[3]}||', inline=False)
-                await interaction.channel.send(embed=resultembed)
-        #await asyncio.sleep(1)
 
-        # for file in os.listdir('data/video/'):
-        #     if not file == "placerholder":
-        #         os.remove(f'data/video/{file}')
+        select.callback = my_callback
+        view = MyView(data=results, beginning_index=beginning_index, end_index=end_index, request=expression)
+        
+        view.add_item(select)
+        await interaction.followup.send(embed=myembed, view=view)
                 
 async def setup(bot: commands.Bot) -> None:
-    await bot.add_cog(MediaCog(bot), guilds=[discord.Object(id=guild_id)])
+    await bot.add_cog(MediaCog(bot))
