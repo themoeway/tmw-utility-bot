@@ -215,49 +215,5 @@ class Kneels(commands.Cog):
         con.commit()
         con.close()
         
-    @app_commands.command(name="mykneels", description='A list of messages you kneeled to and your kneel count as score.')
-    async def mykneels(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
-        data = await self.find_kneel_message()
-        kneels_received = sum([score for user_id, message_id, score, channel_id, created_at in data if int(user_id) == interaction.user.id])
-        tmw_kneel_count = sum([score for user_id, message_id, score, channel_id, created_at in data])
-        # for user_id, message_id, score, channel_id, created_at in data:
-        #     channel = await interaction.guild.fetch_channel(int(channel_id))
-        #     message = await channel.fetch_message(int(message_id))
-        #     for reaction in message.reactions:
-        #         async for user in reaction.users():
-        #             if user.id == interaction.user.id:
-        #                 kneels_given += 1
-        # embed = discord.Embed(title='Kneel Overview')
-        # embed.add_field(name='User', value=interaction.user.name)
-        # embed.add_field(name='Kneels given', value=kneels_given)
-        # embed.add_field(name='Kneel received', value=kneel_count)
-        
-        await interaction.edit_original_response(embed=embed)
-            
-        
-    # @app_commands.command(name="update_db", description="DB update")
-    # @app_commands.checks.has_role("Moderator")
-    # async def update_db(self, interaction: discord.Interaction):
-    #     await interaction.response.defer(ephemeral=True, thinking=f'Updateing db.')
-    #     for channel in interaction.guild.channels:
-    #         if channel.type == discord.ChannelType.forum or channel.type == discord.ChannelType.category or channel.name.startswith("quiz") or channel.name.startswith("bookmark-list") or channel.name.startswith("chinese-汉语") or channel.name.startswith("manga-club") or channel.name.startswith("server-logs") or channel.name.startswith("today-i-learned") or channel.name.startswith("weekly-reports") or channel.name.startswith("joins-leaves") or channel.name.startswith("immersion-logs") or channel.name.startswith("general-vc-chat"):
-    #             continue
-    #         print(channel)
-    #         async for message in channel.history(oldest_first=False, limit=500):
-    #             kneel_count = []   
-    #             for reaction in message.reactions:
-    #                 if reaction.emoji == "🧎" or reaction.emoji == "🧎‍♂️" or reaction.emoji == "🧎‍♀️" or str(reaction.emoji) == "<:ikneel:1018615871326912623>":
-    #                     kneel_count.append(reaction.count)
-    #                     continue
-    #                 else:
-    #                     continue
-    #             if kneel_count == []:
-    #                 continue
-    #             else:
-    #                 await self.update_kneel_score(message, sum(kneel_count))
-    #         # await interaction.edit_original_response(content=f'Done with {channel}')
-    #     await interaction.channel.send(content='Done completely.')
-        
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Kneels(bot))                    
