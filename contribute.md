@@ -17,8 +17,8 @@ Below are a few guidelines to ensure contributions have a good level of quality 
 - Incomplete or non-standalone features will not be merged.
 
 Create a role called "Moderator" on your discord server where you invited the bot to and assign it to yourself.
-To develop on the bot, start the bot then set change to the code. If you change something in the `immersionbotcogs` directory, then instead of restarting the bot, use the `/reload_cog` command, which restarts that one command block i.e cog/file.
-If you change a file outside of the `immersionbotcogs` direcotry, then you need to restart the bot so the changes take effect.
+To develop on the bot, start the bot then set change to the code. If you change something in the `cogs` directory, then instead of restarting the bot, use the `/reload_cog` command, which restarts that one command block i.e cog/file.
+If you change a file outside of the `cogs` direcotry, then you need to restart the bot so the changes take effect.
 
 ## Setup
 
