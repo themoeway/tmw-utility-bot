@@ -22,7 +22,7 @@ If you change a file outside of the `cogs` direcotry, then you need to restart t
 
 ## Setup
 
-The immersion bot uses [Python 3.9.0](https://www.python.org/downloads/release/python-390/) and [pip 24.2](https://discuss.python.org/t/announcement-pip-24-2-release/59402) tools for building and testing.
+The tmw-utility bot uses [Python 3.9.0](https://www.python.org/downloads/release/python-390/) and [pip 24.2](https://discuss.python.org/t/announcement-pip-24-2-release/59402) tools for building and testing.
 
 ##  Testing
 
