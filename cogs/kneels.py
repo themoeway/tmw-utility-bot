@@ -203,8 +203,11 @@ class Kneels(commands.Cog):
     async def kneelmessage(self, interaction: discord.Interaction, place: int):
         await interaction.response.defer(ephemeral=True)
         data = await self.find_kneel_message()
-        channel = await interaction.guild.fetch_channel(int(data[place - 1][3]))
-        message = await channel.fetch_message(int(data[place - 1][1]))
+        try:
+            channel = await interaction.guild.fetch_channel(int(data[place - 1][3]))
+            message = await channel.fetch_message(int(data[place - 1][1]))
+        except Exception:
+            return await interaction.edit_origina_response(content=f'Message got deleted. It had data[0][2] kneels.')
         await interaction.edit_original_response(content=f'{place}# kneeled message: {message.jump_url}')
 
     async def update_kneel_score(self, message, count):
