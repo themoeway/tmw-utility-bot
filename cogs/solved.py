@@ -29,29 +29,31 @@ class Solved(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.myguild = self.bot.get_guild(guild_id)
-        self.questions_forum = get(self.tmw.channels, name='questions-forum') or self.tmw.get_channel(1019998042654511106)
+        self.questions_forum = get(self.myguild.channels, name='questions-forum') or self.myguild.get_channel(1019998042654511106)
         self.batch_update.start()
 
     @app_commands.command(name="solved", description="Marks a thread as solved.")
     async def solved(self, interaction: discord.Interaction):
         assert isinstance(interaction.channel, discord.Thread)
+        if '[SOLVED]' in interaction.channel.name:
+            return await interaction.response.send_message('This thread is already marked as solved.', ephemeral=True)
         await interaction.response.send_message(f'{interaction.user} closed the thread.')
         await interaction.channel.edit(locked=True, archived=True, reason=f'Marked as solved by {interaction.user} (ID: {interaction.user.id}')
         
-    @app_commands.command(name="slow_mode", description="Set a TextChannel to slowmode.")
-    @app_commands.checks.has_role("Moderator")
-    async def slow_mode(self, interaction: discord.Interaction, channel: discord.TextChannel, delay: int):
-        await channel.slowmode_delay(delay)
-        await interaction.response.send_message(ephemeral=True, content=f'Set {channel} to {delay} seconds delay.')
+    @commands.Cog.listener()
+    async def on_thread_create(self, thread):
+        if thread.id == 1019998042654511106 or thread.id == 1081253736388755516 or thread.parent.name == "questions-forum" or thread.parent.name == "newbie-questions":
+            reply = f'{thread.owner.mention} make sure to close this thread via ``/solved`` after having solved your question. :10smartcat:'
+            await thread.send(reply)
         
     @tasks.loop(hours=24)
     async def batch_update(self):
-        self.questions_forum = get(self.tmw.channels, name='questions-forum') or self.tmw.get_channel(1019998042654511106)
+        self.questions_forum = get(self.myguild.channels, name='questions-forum') or self.myguild.get_channel(1019998042654511106)
         now = datetime.now()
         for thread in self.questions_forum.threads:
-            if thread.archived:
+            if thread.archived or "[SOLVED]" in thread.name:
                 continue
-            if (now - thread.created_at.replace(tzinfo=None)).days >= 15:
+            if (now - thread.created_at.replace(tzinfo=None)).days >= 7:
                 if 1014211242065395774 not in [member.id for member in await thread.fetch_members()]:
                     await thread.send(f'{thread.owner.mention} has your problem been solved? If so, do  ``/solved`` to close this thread.')
         
